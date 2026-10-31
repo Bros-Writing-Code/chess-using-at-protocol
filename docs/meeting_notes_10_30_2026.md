@@ -9,4 +9,5 @@ This weekend, go ahead and explore. Play chess on websites like chess.com. Look 
 
 If you want to use AI to slop together a mockup this weekend, do it! That’ll be a great way to explore what’s possible and what the constraints/risks are.
 
-See you on monday, and enjoy the weekend! :jack_o_lantern:🎃
+See you on monday, and enjoy the weekend! :jack_o_lantern:
+ref: http://chess.com/
