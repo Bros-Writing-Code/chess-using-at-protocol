@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run"
   },
   "repository": {
     "type": "git",
@@ -16,9 +16,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/Bros-Writing-Code/chess-using-at-protocol/issues"
   },
-  "homepage": "https://github.com/Bros-Writing-Code/chess-using-at-protocol#readme"
+  "homepage": "https://github.com/Bros-Writing-Code/chess-using-at-protocol#readme",
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
 }
