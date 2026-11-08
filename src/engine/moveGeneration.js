@@ -1,6 +1,6 @@
 import {
   NORTH, SOUTH, EAST, WEST,
-  emptyBoard, findKing, fromSquare, onBoard, pieceAt, rowOf, toIndex, toSquare,
+  findKing, fromSquare, onBoard, pieceAt, rowOf, toIndex, toSquare,
 } from './0x88helper.js';
 
 const DIAGONALS = [NORTH + WEST, NORTH + EAST, SOUTH + WEST, SOUTH + EAST];
@@ -8,19 +8,12 @@ const STRAIGHTS = [NORTH, SOUTH, WEST, EAST];
 const ALL_DIRECTIONS = [...DIAGONALS, ...STRAIGHTS];
 const KNIGHT_OFFSETS = [-33, -31, -18, -14, 14, 18, 31, 33];
 
-// Normalize the 8×8 board from types.js or a 128-cell board to 0x88.
+// The engine stores the board as a 128-cell 0x88 array.
 function boardOf(state) {
-  const source = state.board;
-  if (!Array.isArray(source)) throw new TypeError('state.board must be an array');
-  if (source.length === 128) return source;
-  if (source.length !== 8 || source.some(row => !Array.isArray(row) || row.length !== 8)) {
-    throw new TypeError('state.board must be an 8×8 or 0x88 board');
+  if (!Array.isArray(state.board) || state.board.length !== 128) {
+    throw new TypeError('state.board must be a 128-cell 0x88 board');
   }
-  const board = emptyBoard();
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) board[toIndex(row, col)] = source[row][col];
-  }
-  return board;
+  return state.board;
 }
 
 // Validate coordinates before converting; invalid values could map to another valid square.
@@ -68,7 +61,7 @@ function pawnMoves(state, board, from, color) {
     const two = one + forward;
     if (rowOf(from) === startRow && !pieceAt(board, two)) moves.push(two);
   }
-  const ep = indexOf(state.enPassantTarget);
+  const ep = state.enPassantTarget;
   for (const side of [WEST, EAST]) {
     const to = from + forward + side;
     if (!onBoard(to)) continue;
@@ -167,7 +160,7 @@ function boardAfterMove(state, board, from, to, piece) {
   const next = board.slice();
   next[from] = null;
   next[to] = piece;
-  if (piece.type === 'p' && to === indexOf(state.enPassantTarget) &&
+  if (piece.type === 'p' && to === state.enPassantTarget &&
       !pieceAt(board, to) && Math.abs(to - from) !== 16) {
     next[to + (piece.color === 'w' ? SOUTH : NORTH)] = null;
   }

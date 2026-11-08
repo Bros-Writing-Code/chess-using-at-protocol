@@ -64,12 +64,11 @@
  */
 
 /**
- * A chessboard represented by eight rows,
- * each containing eight squares.
+ * A 128-cell 0x88 chessboard. Each row uses 16 cells: the first eight
+ * are squares, and the remaining eight are null padding cells.
+ * Empty squares also contain null.
  *
- * Empty squares contain null.
- *
- * @typedef {Array<Array<Piece|null>>} Board
+ * @typedef {Array<Piece|null>} Board
  */
 
 /**
@@ -104,7 +103,7 @@
  * @property {Board} board - Current board position.
  * @property {Color} currentTurn - Player to move.
  * @property {CastlingRights} castlingRights - Castling availability.
- * @property {Square|null} enPassantTarget - En passant target square.
+ * @property {number|null} enPassantTarget - En passant target as a 0x88 index.
  * @property {number} halfmoveClock - Halfmoves since a pawn move or capture.
  * @property {number} fullmoveNumber - Fullmove counter, starting at 1.
  * @property {Array<Move>} moveHistory - Moves played so far.
