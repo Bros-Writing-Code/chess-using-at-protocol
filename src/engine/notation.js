@@ -240,9 +240,15 @@ export function GameStatetoFEN(state) {
   if (rights.bQueenside) castling += 'q';
   if (!castling) castling = '-';
 
-  const ep = state.enPassantTarget === null
-    ? '-'
-    : sqName(state.enPassantTarget);
+  let ep = '-';
+  if (state.enPassantTarget !== null) {
+    ep = sqName(state.enPassantTarget);
+    // Validate that the target rank matches the active player's turn direction
+    const expectedRank = state.currentTurn === 'w' ? '6' : '3';
+    if (ep[1] !== expectedRank) {
+      throw new Error('En passant target conflicts with active player turn rank.');
+    }
+  }
 
   if (!Number.isSafeInteger(state.halfmoveClock) ||
       state.halfmoveClock < 0 ||

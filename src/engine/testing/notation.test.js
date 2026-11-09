@@ -220,6 +220,36 @@ describe('FEN serialization', () => {
     );
   });
 
+  it('rejects en passant targets that conflict with the active player', () => {
+    const state = createMockState();
+
+    // White to move: target must be on rank 6, not rank 3.
+    state.currentTurn = 'w';
+    state.enPassantTarget = sqIndex('e3');
+    expect(() => GameStatetoFEN(state)).toThrow(/en passant/i);
+
+    // Black to move: target must be on rank 3, not rank 6.
+    state.currentTurn = 'b';
+    state.enPassantTarget = sqIndex('d6');
+    expect(() => GameStatetoFEN(state)).toThrow(/en passant/i);
+
+    // Ranks other than 3 and 6 are never valid targets.
+    state.currentTurn = 'w';
+    state.enPassantTarget = sqIndex('e4');
+    expect(() => GameStatetoFEN(state)).toThrow(/en passant/i);
+  });
+
+  it('only produces en passant FENs that FENtoGameState accepts', () => {
+    const state = createMockState();
+
+    for (const [turn, square] of [['w', 'a6'], ['w', 'h6'], ['b', 'a3'], ['b', 'h3']]) {
+      state.currentTurn = turn;
+      state.enPassantTarget = sqIndex(square);
+      const fen = GameStatetoFEN(state);
+      expect(FENtoGameState(fen).enPassantTarget).toBe(sqIndex(square));
+    }
+  });
+
   it('serializes move counters', () => {
     const state = createMockState();
 
