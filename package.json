@@ -7,7 +7,9 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "bench:build": "node bench/build.mjs",
+    "bench:serve": "python3 -m http.server 8080 -d bench/dist"
   },
   "repository": {
     "type": "git",
@@ -22,6 +24,14 @@
   },
   "homepage": "https://github.com/Bros-Writing-Code/chess-using-at-protocol#readme",
   "devDependencies": {
+    "@chrisoakman/chessboardjs": "^1.0.0",
+    "chessground": "^9.2.1",
+    "cm-chessboard": "^8.15.4",
+    "esbuild": "^0.28.2",
+    "jquery": "^4.0.0",
+    "react": "^18.3.1",
+    "react-chessboard": "^4.7.3",
+    "react-dom": "^18.3.1",
     "vitest": "^2.1.8"
   }
 }

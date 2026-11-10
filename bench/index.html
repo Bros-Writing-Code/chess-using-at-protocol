@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chess UI Benchmarks</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 16px; }
+    table { border-collapse: collapse; font-size: 13px; }
+    th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { background: #f4f4f4; }
+    li { margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <h1>Chess UI benchmarks</h1>
+  <p>Open each page in its <b>own fresh tab</b>, press <b>Run benchmark</b>, wait, then come back and reload this page to see results.</p>
+  <ul id="links"></ul>
+  <h2>Results</h2>
+  <table id="results"></table>
+  <p><button id="copy">Copy results as JSON</button> <button id="clear">Clear saved results</button></p>
+  <script>
+    const IDS = ["baseline", "dom", "svg", "canvas", "chessground", "cmchessboard", "reactchessboard", "chessboardjs"];
+    const f = (n, d = 2) => (n == null ? "n/a" : n.toFixed(d));
+    const links = document.getElementById("links");
+    for (const id of IDS) {
+      const li = document.createElement("li");
+      li.innerHTML = `<a href="${id}.html" target="_blank">${id}</a>`;
+      links.appendChild(li);
+    }
+    function load() {
+      const rows = [];
+      for (const id of IDS) {
+        try { const raw = localStorage.getItem("bench:" + id); if (raw) rows.push(JSON.parse(raw)); } catch {}
+      }
+      return rows;
+    }
+    const rows = load();
+    const table = document.getElementById("results");
+    table.innerHTML = "<tr><th>Method</th><th>Initial (ms)</th><th>Update median (ms)</th><th>Update p95 (ms)</th><th>Update+layout median (ms)</th><th>300 updates (ms)</th><th>JS (KB)</th><th>CSS (KB)</th><th>Other (KB)</th><th>Heap after (MB)</th><th>DOM nodes</th></tr>" +
+      (rows.length ? rows.map(r => `<tr><td>${r.label}</td><td>${f(r.initial.syncMs)}</td><td>${f(r.update.median, 3)}</td><td>${f(r.update.p95, 3)}</td><td>${f(r.updateWithLayout.median, 3)}</td><td>${f(r.passTotalMs.median, 1)}</td><td>${f(r.resources.jsKB, 1)}</td><td>${f(r.resources.cssKB, 1)}</td><td>${f(r.resources.otherKB, 1)}</td><td>${f(r.memory.heapAfterUpdatesMB)}</td><td>${r.domNodes}</td></tr>`).join("") : "<tr><td colspan=11>No results yet.</td></tr>");
+    document.getElementById("copy").onclick = () => navigator.clipboard.writeText(JSON.stringify(rows, null, 2));
+    document.getElementById("clear").onclick = () => { for (const id of IDS) try { localStorage.removeItem("bench:" + id); } catch {} location.reload(); };
+  </script>
+</body>
+</html>

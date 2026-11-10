@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chess Board</title>
+  <style>
+    body { display: grid; place-items: center; min-height: 100vh; margin: 0; background: #222; }
+    #board { display: grid; grid-template-columns: repeat(8, 1fr); width: min(90vmin, 560px); aspect-ratio: 1; }
+    .sq { display: grid; place-items: center; font-size: min(8vmin, 48px); user-select: none; }
+    .light { background: #f0d9b5; }
+    .dark { background: #b58863; }
+    .sq.selected { outline: 4px solid #4a9eff; outline-offset: -4px; }
+  </style>
+</head>
+<body>
+  <div id="board"></div>
+  <script>
+    // Rank 8 first (row 0), file a first (col 0). Uppercase = white, lowercase = black.
+    const START = [
+      "rnbqkbnr",
+      "pppppppp",
+      "........",
+      "........",
+      "........",
+      "........",
+      "PPPPPPPP",
+      "RNBQKBNR",
+    ];
+    const GLYPH = {
+      K: "♔", Q: "♕", R: "♖", B: "♗", N: "♘", P: "♙",
+      k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟",
+    };
+
+    const boardEl = document.getElementById("board");
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const sq = document.createElement("div");
+        sq.className = "sq " + ((row + col) % 2 === 0 ? "light" : "dark");
+        sq.textContent = GLYPH[START[row][col]] ?? "";
+        sq.addEventListener("click", () => {
+          const prev = boardEl.querySelector(".selected");
+          if (prev) prev.classList.remove("selected");
+          if (prev !== sq) sq.classList.add("selected");
+        });
+        boardEl.appendChild(sq);
+      }
+    }
+  </script>
+</body>
+</html>
