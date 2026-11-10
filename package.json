@@ -7,7 +7,9 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "dev": "vite src/app/chessground-demo",
+    "build": "vite build src/app/chessground-demo"
   },
   "repository": {
     "type": "git",
@@ -22,6 +24,11 @@
   },
   "homepage": "https://github.com/Bros-Writing-Code/chess-using-at-protocol#readme",
   "devDependencies": {
+    "vite": "^5.4.21",
     "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "@lichess-org/chessground": "^10.5.0",
+    "chess.js": "^1.4.0"
   }
 }
