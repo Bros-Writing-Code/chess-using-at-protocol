@@ -25,7 +25,7 @@ export default {
     for (let i = 0; i < 64; i++) {
       const sq = document.createElement("div");
       const row = i >> 3, col = i & 7;
-      sq.style.cssText = `display:grid;place-items:center;font-size:44px;background:${(row + col) % 2 ? DARK : LIGHT}`;
+      sq.style.cssText = `display:grid;place-items:center;font-size:${Math.round(container.clientWidth / 8 * 0.7)}px;background:${(row + col) % 2 ? DARK : LIGHT}`;
       container.appendChild(sq);
       squares.push(sq);
     }

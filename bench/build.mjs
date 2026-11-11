@@ -6,7 +6,7 @@
 // Methods whose npm packages aren't installed are skipped with a message.
 
 import { build } from "esbuild";
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -83,6 +83,25 @@ for (const [id, cfg] of Object.entries(methods)) {
   } catch (err) {
     console.log(`SKIPPED ${id}: ${String(err.message).split("\n")[0]}`);
   }
+}
+
+// ---- side-by-side comparison page: all methods in one bundle, all CSS linked ----
+try {
+  await build({
+    entryPoints: [join(benchDir, "compare.js")],
+    bundle: true,
+    minify: true,
+    format: "esm",
+    outfile: join(dist, "compare.js"),
+    define: { "process.env.NODE_ENV": '"production"' },
+    logLevel: "silent",
+  });
+  const allCss = readdirSync(join(dist, "css")).map((n) => `<link rel="stylesheet" href="css/${n}">`).join("\n");
+  const html = readFileSync(join(benchDir, "compare.html"), "utf8").replace("</head>", allCss + "\n</head>");
+  writeFileSync(join(dist, "compare.html"), html);
+  console.log("built   compare");
+} catch (err) {
+  console.log(`SKIPPED compare: ${String(err.message).split("\n")[0]}`);
 }
 
 cpSync(join(benchDir, "index.html"), join(dist, "index.html"));

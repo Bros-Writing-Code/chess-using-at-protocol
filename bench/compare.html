@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compare Chess UIs</title>
+  <style>
+    :root { --bg:#fff; --fg:#1b1b1b; --muted:#666; --card:#f6f6f6; --bar:#3b7ddd; --track:#e2e2e2; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#161616; --fg:#eee; --muted:#aaa; --card:#232323; --bar:#6aa2f0; --track:#333; } }
+    body { font-family: system-ui, sans-serif; margin: 16px; background: var(--bg); color: var(--fg); }
+    h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 18px; margin: 28px 0 8px; } h3 { font-size: 14px; margin: 0 0 6px; }
+    #controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+    #slider { flex: 1; min-width: 160px; }
+    #fen { font: 12px ui-monospace, monospace; color: var(--muted); word-break: break-all; }
+    #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+    .card { background: var(--card); padding: 12px; border-radius: 8px; }
+    .board { position: relative; }
+    .stat { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+    .chart { margin: 12px 0 20px; max-width: 900px; }
+    .bar-row { display: grid; grid-template-columns: minmax(180px, 280px) 1fr 60px; gap: 8px; align-items: center; font-size: 12px; margin: 3px 0; }
+    .bar-track { background: var(--track); height: 14px; border-radius: 3px; overflow: hidden; }
+    .bar { display: block; height: 100%; background: var(--bar); }
+    .bar-val { text-align: right; font-variant-numeric: tabular-nums; }
+    @media (max-width: 600px) { .bar-row { grid-template-columns: 1fr 1fr 50px; } }
+  </style>
+</head>
+<body>
+  <h1>Side-by-side comparison</h1>
+  <p>Every board shows the same position. Step through them to compare how each one looks and behaves, then run the stress test to see timings as bars.</p>
+  <div id="controls">
+    <button id="reset" disabled>⏮ Reset</button>
+    <button id="prev" disabled>◀ Prev</button>
+    <button id="next" disabled>Next ▶</button>
+    <button id="play" disabled>Play</button>
+    <input id="slider" type="range" min="0" max="300" value="0" disabled aria-label="Position">
+    <span id="pos">Position 0 / 300</span>
+    <button id="stress" disabled>Run stress test (300 updates each)</button>
+    <span id="stress-status"></span>
+  </div>
+  <div id="fen"></div>
+  <div id="stress-chart" class="chart"></div>
+  <div id="grid"></div>
+  <h2>Saved results from the individual benchmark pages</h2>
+  <div id="saved"></div>
+  <script type="module" src="compare.js"></script>
+</body>
+</html>

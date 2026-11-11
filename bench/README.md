@@ -32,6 +32,10 @@ open -a "Google Chrome" --args --enable-precise-memory-info --js-flags=--expose-
 
 Open each method's page in its own fresh tab, press **Run benchmark**, and leave the tab alone until it finishes. Reload `index.html` to see the combined table. Repeat the whole thing a few times and compare the medians, not single runs.
 
+## Side-by-side comparison
+
+Open `http://localhost:8080/compare.html`. All boards render the same position at the same time, so you can compare how each looks and spot rendering bugs. Use Prev/Next/Play or the slider to step through 300 positions, and **Run stress test** to time 300 updates per method and see the result as bars. The bottom of the page charts the results saved by the individual benchmark pages.
+
 ## What is measured
 
 - **Initial render:** mounting the board with the starting position, plus a forced layout. A second figure includes waiting for the next frame, but it is rounded to the display's refresh interval.

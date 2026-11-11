@@ -6,12 +6,12 @@ import { flushSync } from "react-dom";
 import { Chessboard } from "react-chessboard";
 import { BOARD_PX } from "../harness.js";
 
-let root;
+let root, width = BOARD_PX;
 const full = (p) => p + " w - - 0 1";
-const view = (placement) =>
+const view = (placement, width) =>
   React.createElement(Chessboard, {
     position: full(placement),
-    boardWidth: BOARD_PX,
+    boardWidth: width,
     animationDuration: 0,
     arePiecesDraggable: false,
     showBoardNotation: false,
@@ -21,11 +21,12 @@ export default {
   id: "reactchessboard",
   label: "Library: react-chessboard",
   mount(container, placement) {
+    width = container.clientWidth || BOARD_PX;
     root = createRoot(container);
-    flushSync(() => root.render(view(placement)));
+    flushSync(() => root.render(view(placement, width)));
   },
   setPosition(placement) {
-    flushSync(() => root.render(view(placement)));
+    flushSync(() => root.render(view(placement, width)));
   },
   destroy() {
     root?.unmount();
