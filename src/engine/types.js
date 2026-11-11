@@ -120,4 +120,4 @@
  * @typedef {{ok: true, value: T} | {ok: false, error: string}} Result
  */
 
-
+export {};
