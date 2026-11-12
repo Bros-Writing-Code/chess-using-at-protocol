@@ -34,7 +34,7 @@ In this version of the system, the gameplay process would look like the followin
 11. Bob's client compares the PGN to his PGN.
   1. It checks whether it was Alice's turn. (fail -> wrongTurn)
   2. It checks whether exactly one new move was appended beyond the accepted state (fail -> badPrev)
-  3. It replays the full PGN with the engine and validates every move (fail -> illegalMove)
+  3. If the previous check passed, it checks the one new move that was added with the check engine (fail -> illegalMove)
   4. It computes the resulting FEN from Alice's full PGN and matches it to Alice's FEN  (fail -> badFEN)
 12. Bob makes a move on the UI.
 
@@ -95,4 +95,6 @@ Bob's client catches this from the Jetstream and does the following:
 11. If all checks pass, Alice made a legal move. 
 12. Bob makes a move on his UI.
 
-The difference here is that Bob doesn't have to validate the entire game history on every play. He stores a trusted local state in his browser, so his client only has to validate the most recent move. This is because each move is linked to the previous move in the chain. If Bob reloads his page, he can restore the validated state from IndexedDB and then check subsequent moves. If Bob's browser loses that state, he can retrieve move records from both repos and validate the game step by step. One difficulty here would be branching games. Multiple valid move records could reference a single previous move record, so an unambigouous reconstruction might be impossible with an adversarial opponent. A good client would have to report this to the user in some way.
+## Tradeoffs
+
+The difference between options 1 and 2 really just comes down to where the state exists. Option 1 stores game state for each game in one unified location. Option 2 stores it across an auditable sequence of move records. My recommendation is to choose Option 1. It's a lot simpler of a design to implement, and at the end of the game you get a clear single record of the entire game in both players' repos.
