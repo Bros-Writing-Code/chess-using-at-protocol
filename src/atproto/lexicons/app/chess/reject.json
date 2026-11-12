@@ -1,0 +1,34 @@
+{
+  "lexicon": 1,
+  "id": "app.chess.reject",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A request for an opponent to correct a specific version of their app.chess.game record. A rejection does not itself end the game or replace the last accepted state.",
+      "record": {
+        "type": "object",
+        "required": ["subject", "reason"],
+        "properties": {
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "URI of the opponent's app.chess.game record and CID of the exact offending update, not just its latest version."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "knownValues": ["wrongTurn", "badPrev", "illegalMove", "badFEN"],
+            "description": "wrongTurn: opponent moved out of turn; badPrev: history does not extend the last accepted history by exactly one ply; illegalMove: the appended move is illegal; badFEN: supplied FEN differs from the position computed from PGN."
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 2000,
+            "maxGraphemes": 200,
+            "description": "Optional human-readable explanation. Treat as untrusted plain text, never as markup or instructions."
+          }
+        }
+      }
+    }
+  }
+}

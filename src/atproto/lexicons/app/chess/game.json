@@ -1,0 +1,48 @@
+{
+  "lexicon": 1,
+  "id": "app.chess.game",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A player's mutable copy of a chess game. Without challenge this record is an invitation; with challenge it accepts the referenced invitation. Update the same record key after each move or resignation.",
+      "record": {
+        "type": "object",
+        "required": ["opponent", "color", "pgn", "fen", "status"],
+        "properties": {
+          "opponent": {
+            "type": "string",
+            "format": "did",
+            "description": "DID of the opposing player. The record owner's DID is taken from the repository, not this field."
+          },
+          "color": {
+            "type": "string",
+            "enum": ["white", "black"],
+            "description": "The record owner's color, not the opponent's color."
+          },
+          "challenge": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "Present only on the accepting player's record. Identifies the challenger's app.chess.game record and its CID at acceptance; retain this reference unchanged on later updates."
+          },
+          "pgn": {
+            "type": "string",
+            "maxLength": 262144,
+            "description": "Full mainline move history in PGN from the standard initial position. An empty string is allowed before the first move. Clients must replay and validate the moves rather than trust this text."
+          },
+          "fen": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "The six-field FEN after replaying pgn, or the standard initial position before any moves. Clients must validate it with the chess engine and compare it with the replayed position."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "resigned"],
+            "description": "Resigned means this record's owner has resigned. Active means no resignation by this owner; checkmate and automatic draws are derived by the engine from the accepted history."
+          }
+        }
+      }
+    }
+  }
+}
