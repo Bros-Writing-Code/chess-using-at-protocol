@@ -139,7 +139,7 @@ export function applyMove(state, uci) {
   const piece = state.board[from];
   if (!piece) return { ok: false, error: 'No piece on the starting square' };
   if (piece.color !== state.currentTurn) {
-    return { ok: false, error: 'It is not that piece’s turn' };
+    return { ok: false, error: "It is not that piece's turn" };
   }
   if (!moveGenerator(state, move.from).some((target) => fromSquare(target) === to)) {
     return { ok: false, error: 'Illegal move' };
