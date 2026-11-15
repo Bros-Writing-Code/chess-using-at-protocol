@@ -37,27 +37,92 @@ export function isInCheck(state) {
 }
 
 /**
+ * True if neither side has enough material to checkmate: K vs K, K+B vs K,
+ * K+N vs K, or kings plus bishops that all stand on the same square color.
+ * Positions where mate is possible only with help (e.g. K+N+N vs K) still count
+ * as sufficient, matching common online play.
+ *
+ * @param {GameState} state
+ * @returns {boolean}
+ */
+export function isInsufficientMaterial(state) {
+  /** @type {number[]} */
+  const minors = [];
+  for (const index of SQUARES) {
+    const piece = state.board[index];
+    if (!piece || piece.type === 'k') continue;
+    if (piece.type !== 'b' && piece.type !== 'n') return false; // pawn, rook, or queen
+    minors.push(index);
+  }
+
+  if (minors.length <= 1) return true; // K vs K, or a single bishop or knight
+
+  // More than one minor piece: a draw only if all are bishops on one square color.
+  const squareColor = (index) => ((index >> 4) + (index & 7)) % 2;
+  return minors.every((index) =>
+    state.board[index]?.type === 'b' && squareColor(index) === squareColor(minors[0]));
+}
+
+/**
+ * True if the current position has occurred at least three times.
+ * Uses positionHistory, whose last entry is the current position (applyMove
+ * records it). A state loaded from FEN has no history, so no repetition yet.
+ * Only positions since the last pawn move or capture can repeat.
+ *
+ * @param {GameState} state
+ * @returns {boolean}
+ */
+function isThreefoldRepetition(state) {
+  const history = state.positionHistory;
+  if (!Array.isArray(history) || history.length < 5) return false;
+
+  const current = history[history.length - 1];
+  const earliest = Math.max(0, history.length - 1 - state.halfmoveClock);
+  let count = 0;
+  for (let i = history.length - 1; i >= earliest; i--) {
+    if (history[i] === current && ++count >= 3) return true;
+  }
+  return false;
+}
+
+/**
  * Compute the current position's status without modifying the game state.
- * Draw conditions other than stalemate are handled separately.
+ * Checkmate and stalemate take priority; otherwise the game is a draw by
+ * insufficient material, the fifty-move rule, or threefold repetition.
  *
  * @param {GameState} state
  * @returns {Pick<GameState, 'status' | 'winner' | 'drawReason'>}
  */
 export function getGameStatus(state) {
   // A single legal move is enough to rule out checkmate and stalemate.
+  let hasLegalMove = false;
   for (const index of SQUARES) {
     if (state.board[index]?.color === state.currentTurn &&
         moveGenerator(state, toSquare(index)).length > 0) {
-      return { status: 'active', winner: null, drawReason: null };
+      hasLegalMove = true;
+      break;
     }
   }
 
-  if (isInCheck(state)) {
-    const winner = state.currentTurn === 'w' ? 'b' : 'w';
-    return { status: 'checkmate', winner, drawReason: null };
+  if (!hasLegalMove) {
+    if (isInCheck(state)) {
+      const winner = state.currentTurn === 'w' ? 'b' : 'w';
+      return { status: 'checkmate', winner, drawReason: null };
+    }
+    return { status: 'stalemate', winner: null, drawReason: 'stalemate' };
   }
 
-  return { status: 'stalemate', winner: null, drawReason: 'stalemate' };
+  if (isInsufficientMaterial(state)) {
+    return { status: 'draw', winner: null, drawReason: 'insufficient-material' };
+  }
+  if (state.halfmoveClock >= 100) {
+    return { status: 'draw', winner: null, drawReason: 'fifty-move-rule' };
+  }
+  if (isThreefoldRepetition(state)) {
+    return { status: 'draw', winner: null, drawReason: 'threefold-repetition' };
+  }
+
+  return { status: 'active', winner: null, drawReason: null };
 }
 
 /**
