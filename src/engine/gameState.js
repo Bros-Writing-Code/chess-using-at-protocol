@@ -44,8 +44,6 @@ export function isInCheck(state) {
  * @returns {Pick<GameState, 'status' | 'winner' | 'drawReason'>}
  */
 export function getGameStatus(state) {
-  const inCheck = isInCheck(state);
-
   // A single legal move is enough to rule out checkmate and stalemate.
   for (const index of SQUARES) {
     if (state.board[index]?.color === state.currentTurn &&
@@ -54,7 +52,7 @@ export function getGameStatus(state) {
     }
   }
 
-  if (inCheck) {
+  if (isInCheck(state)) {
     const winner = state.currentTurn === 'w' ? 'b' : 'w';
     return { status: 'checkmate', winner, drawReason: null };
   }
