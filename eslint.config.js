@@ -9,7 +9,9 @@ import sonarjs from 'eslint-plugin-sonarjs';
 
 export default defineConfig([
   // `**/` because Vite builds into src/app/chessground-demo/dist, not the repo root.
-  globalIgnores(['**/dist/', '**/coverage/']),
+  // src/bot/assets holds a minified Stockfish build copied from the stockfish npm
+  // package (#47): third-party output with nothing for us to fix.
+  globalIgnores(['**/dist/', '**/coverage/', 'src/bot/assets/']),
   {
     files: ['**/*.{js,mjs}'],
     extends: [js.configs.recommended],
@@ -28,8 +30,10 @@ export default defineConfig([
       'import-x/default': 'error', // default import but no default export
       'import-x/namespace': 'error', // ns.foo where foo isn't exported
 
-      // Warn only.
-      complexity: ['warn', 15],
+      // Warn only. Limits are set so today's code warns only on functions that
+      // should be split up (applyMove, GameStatetoFEN, FENtoGameState), not on
+      // compact ones like kingMoves (23) or isAttacked (19).
+      complexity: ['warn', 25],
       'max-lines-per-function': ['warn', { max: 60, skipBlankLines: true, skipComments: true }],
       'sonarjs/no-identical-functions': 'warn',
     },
@@ -38,10 +42,20 @@ export default defineConfig([
     // The engine must stay independent of the UI and ATProto layers.
     files: ['src/engine/**/*.js'],
     rules: {
+      // Our folders, matched by resolved file path, so any ../ depth and
+      // dynamic import() are caught and unrelated names like 'firebase/app' aren't.
+      'import-x/no-restricted-paths': ['error', {
+        zones: [{
+          target: './src/engine',
+          from: ['./src/app', './src/atproto'],
+          message: 'Engine code must not import from the UI or ATProto layers.',
+        }],
+      }],
+      // The libraries behind those layers, so the engine can't bypass the folders.
       'no-restricted-imports': ['error', {
         patterns: [{
-          regex: '(^|/)(app|atproto)(/|$)|^@atproto/|^@lichess-org/chessground',
-          message: 'Engine code must not import from the UI (src/app) or ATProto (src/atproto) layers.',
+          group: ['@atproto/*', '@lichess-org/chessground', '@lichess-org/chessground/*'],
+          message: 'Engine code must not import UI or ATProto libraries.',
         }],
       }],
     },
