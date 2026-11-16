@@ -1,11 +1,11 @@
 {
   "lexicon": 1,
-  "id": "app.chess.reject",
+  "id": "app.knightsky.reject",
   "defs": {
     "main": {
       "type": "record",
       "key": "tid",
-      "description": "A request for an opponent to correct a specific version of their app.chess.game record. A rejection does not itself end the game or replace the last accepted state.",
+      "description": "A request for an opponent to correct a specific version of their app.knightsky.game record. A rejection does not itself end the game or replace the last accepted state.",
       "record": {
         "type": "object",
         "required": ["subject", "reason"],
@@ -13,7 +13,7 @@
           "subject": {
             "type": "ref",
             "ref": "com.atproto.repo.strongRef",
-            "description": "URI of the opponent's app.chess.game record and CID of the exact offending update, not just its latest version."
+            "description": "URI of the opponent's app.knightsky.game record and CID of the exact offending update, not just its latest version."
           },
           "reason": {
             "type": "string",

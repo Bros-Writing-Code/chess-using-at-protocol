@@ -7,9 +7,9 @@ Author: James Keys
 
 ## Lexicon
 
-### [Game](./lexicons/app/chess/game.json)
+### [Game](./lexicons/app/knightsky/game.json)
 
-`app.chess.game` is a mutable record with a TID key. It represents an invitation when `challenge` is absent, or an acceptance when present. The owner updates the same record after a move or resignation.
+`app.knightsky.game` is a mutable record with a TID key. It represents an invitation when `challenge` is absent, or an acceptance when present. The owner updates the same record after a move or resignation.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -20,9 +20,9 @@ Author: James Keys
 | `fen` | String | Yes | Six-field position after replaying `pgn`, or the standard starting position before any moves. Must be 1–256 UTF-8 bytes. Clients must validate it against the replayed position. |
 | `status` | String: `active` or `resigned` | Yes | Whether the record owner has resigned. Checkmate and automatic draws are derived from the accepted history by the engine. |
 
-### [Reject](./lexicons/app/chess/reject.json)
+### [Reject](./lexicons/app/knightsky/reject.json)
 
-`app.chess.reject` is a record with a TID key that requests a correction to a specific version of an opponent's game record. A rejection does not end the game or replace the last accepted state.
+`app.knightsky.reject` is a record with a TID key that requests a correction to a specific version of an opponent's game record. A rejection does not end the game or replace the last accepted state.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |

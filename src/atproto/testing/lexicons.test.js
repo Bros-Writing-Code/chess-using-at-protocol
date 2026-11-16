@@ -4,14 +4,14 @@ import { describe, expect, it } from 'vitest';
 
 const schemas = [
   '../lexicons/com/atproto/repo/strongRef.json',
-  '../lexicons/app/chess/game.json',
-  '../lexicons/app/chess/reject.json',
+  '../lexicons/app/knightsky/game.json',
+  '../lexicons/app/knightsky/reject.json',
 ].map((path) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8')));
 
 // Register the real strongRef dependency so nested URI and CID validation runs.
 const lexicons = new Lexicons(structuredClone(schemas));
-const GAME = 'app.chess.game';
-const REJECT = 'app.chess.reject';
+const GAME = 'app.knightsky.game';
+const REJECT = 'app.knightsky.reject';
 const ALICE = 'did:plc:ewvi7nxzyoun6zhxrhs64oiz';
 const BOB = 'did:plc:z72i7hdynmk6r22z27h6tvur';
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -58,7 +58,7 @@ describe('Option 1 Lexicon documents', () => {
     for (const [id, record] of [[GAME, game()], [REJECT, reject()]]) {
       delete record.$type;
       expect(() => lexicons.assertValidRecord(id, record)).toThrow();
-      record.$type = 'app.chess.move';
+      record.$type = 'app.knightsky.move';
       expect(() => lexicons.assertValidRecord(id, record)).toThrow();
     }
   });

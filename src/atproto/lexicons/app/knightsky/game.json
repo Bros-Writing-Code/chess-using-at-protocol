@@ -1,6 +1,6 @@
 {
   "lexicon": 1,
-  "id": "app.chess.game",
+  "id": "app.knightsky.game",
   "defs": {
     "main": {
       "type": "record",
@@ -23,7 +23,7 @@
           "challenge": {
             "type": "ref",
             "ref": "com.atproto.repo.strongRef",
-            "description": "Present only on the accepting player's record. Identifies the challenger's app.chess.game record and its CID at acceptance; retain this reference unchanged on later updates."
+            "description": "Present only on the accepting player's record. Identifies the challenger's app.knightsky.game record and its CID at acceptance; retain this reference unchanged on later updates."
           },
           "pgn": {
             "type": "string",
