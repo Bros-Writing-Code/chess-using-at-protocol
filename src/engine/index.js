@@ -20,8 +20,7 @@ export {
 } from './game.js';
 
 // Moves
-export { moveGenerator as legalMovesFrom } from './moveGeneration.js';
-export { legalMoves, isValidMove } from './game.js';
+export { legalMovesFrom, legalMoves, isValidMove } from './game.js';
 export { applyMove } from './gameState.js';
 
 // Game status

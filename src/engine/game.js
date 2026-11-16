@@ -9,7 +9,7 @@
 import { SQUARES, toIndex, toSquare } from './0x88helper.js';
 import { FENtoGameState, moveToUCI } from './notation.js';
 import { moveGenerator } from './moveGeneration.js';
-import { applyMove } from './gameState.js';
+import { applyMove, getGameStatus } from './gameState.js';
 
 /** @typedef {import('./types.js').GameState} GameState */
 /** @typedef {import('./types.js').Piece} Piece */
@@ -24,8 +24,22 @@ export const START_FEN =
   'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 /**
+ * Parses a FEN and fills in status / winner / drawReason for that position,
+ * so a game loaded from a finished position is already marked as over.
+ *
+ * @param {string} fen
+ * @returns {GameState}
+ * @throws {Error} If the FEN is malformed.
+ */
+function stateFromFEN(fen) {
+  const state = FENtoGameState(fen);
+  return { ...state, ...getGameStatus(state) };
+}
+
+/**
  * Creates a new game. Returns a fresh object on every call, so two games
- * never share a board.
+ * never share a board. The status already reflects the position, so a
+ * checkmate or stalemate FEN starts as finished.
  *
  * @param {string} [fen=START_FEN] - Starting position.
  * @returns {GameState}
@@ -33,7 +47,7 @@ export const START_FEN =
  * @example const state = createGame();
  */
 export function createGame(fen = START_FEN) {
-  return FENtoGameState(fen);
+  return stateFromFEN(fen);
 }
 
 /**
@@ -49,7 +63,8 @@ function isValidSquare(square) {
 }
 
 /**
- * Returns the piece on a square, or null if it is empty.
+ * Returns a copy of the piece on a square, or null if it is empty.
+ * It is a copy, so changing it never changes the game state.
  *
  * @param {GameState} state
  * @param {Square} square - {row, col}, row 0 = rank 8, col 0 = file a.
@@ -61,13 +76,14 @@ export function getPiece(state, square) {
   if (!isValidSquare(square)) {
     throw new Error(`Invalid square: ${JSON.stringify(square)}`);
   }
-  return state.board[toIndex(square.row, square.col)] ?? null;
+  const piece = state.board[toIndex(square.row, square.col)];
+  return piece ? { ...piece } : null;
 }
 
 /**
  * Returns the board as an 8x8 array for rendering: grid[row][col], with
  * row 0 = rank 8 (Black's back rank) and col 0 = file a.
- * The grid is a new array; changing it does not change the state.
+ * The grid and its pieces are copies; changing them does not change the state.
  *
  * @param {GameState} state
  * @returns {Array<Array<Piece|null>>}
@@ -78,11 +94,26 @@ export function toGrid(state) {
   for (let row = 0; row < 8; row++) {
     const cells = [];
     for (let col = 0; col < 8; col++) {
-      cells.push(state.board[toIndex(row, col)] ?? null);
+      const piece = state.board[toIndex(row, col)];
+      cells.push(piece ? { ...piece } : null);
     }
     grid.push(cells);
   }
   return grid;
+}
+
+/**
+ * Legal destinations for the piece on `square`, for highlighting.
+ * Returns [] once the game is over, matching legalMoves and isValidMove.
+ *
+ * @param {GameState} state
+ * @param {Square} square - {row, col} of the selected piece.
+ * @returns {Square[]}
+ * @example legalMovesFrom(createGame(), { row: 6, col: 4 }) // e2 → e3, e4
+ */
+export function legalMovesFrom(state, square) {
+  if (state.status !== 'active') return [];
+  return moveGenerator(state, square);
 }
 
 /**
@@ -146,7 +177,7 @@ export function replayMoves(ucis, startFen = START_FEN) {
   /** @type {GameState} */
   let state;
   try {
-    state = FENtoGameState(startFen);
+    state = stateFromFEN(startFen);
   } catch (e) {
     return { ok: false, error: `Invalid start position: ${/** @type {Error} */ (e).message}` };
   }

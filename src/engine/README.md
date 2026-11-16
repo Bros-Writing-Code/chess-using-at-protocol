@@ -54,10 +54,10 @@ const { status, winner } = getGameStatus(state);           // 'active' | 'checkm
 | Function | Returns |
 | --- | --- |
 | `START_FEN` | Starting position FEN string |
-| `createGame(fen = START_FEN)` | New `GameState` (fresh object every call) |
-| `getPiece(state, square)` | `Piece` or `null` |
-| `toGrid(state)` | 8×8 array of `Piece \| null` for rendering |
-| `legalMovesFrom(state, square)` | `Square[]` of legal destinations for one piece (king safety included) |
+| `createGame(fen = START_FEN)` | New `GameState` (fresh object every call); status already set, so a checkmate/stalemate FEN starts finished |
+| `getPiece(state, square)` | Copy of the `Piece`, or `null` |
+| `toGrid(state)` | 8×8 array of `Piece \| null` for rendering (copies) |
+| `legalMovesFrom(state, square)` | `Square[]` of legal destinations for one piece (king safety included); `[]` once the game is over |
 | `legalMoves(state)` | `string[]` of every legal move as UCI (promotions listed once per piece) |
 | `isValidMove(state, uci)` | `boolean`; never throws |
 | `applyMove(state, uci)` | `Result<GameState>` (see `gameState` above) |

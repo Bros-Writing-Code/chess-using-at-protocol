@@ -90,6 +90,27 @@ describe('createGame', () => {
   });
 });
 
+const FOOLS_MATE = 'rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3';
+const STALEMATE = '7k/5Q2/6K1/8/8/8/8/8 b - - 0 1';
+
+describe('games that start from a finished position', () => {
+  it('createGame reports checkmate for a mated FEN', () => {
+    expect(createGame(FOOLS_MATE)).toMatchObject({ status: 'checkmate', winner: 'b', drawReason: null });
+  });
+
+  it('createGame reports stalemate for a stalemated FEN', () => {
+    expect(createGame(STALEMATE)).toMatchObject({ status: 'stalemate', winner: null, drawReason: 'stalemate' });
+  });
+
+  it('replayMoves with no moves reports the start position\'s result', () => {
+    expect(replayMoves([], FOOLS_MATE).value.status).toBe('checkmate');
+  });
+
+  it('a normal start is still active', () => {
+    expect(createGame()).toMatchObject({ status: 'active', winner: null, drawReason: null });
+  });
+});
+
 describe('getPiece and toGrid', () => {
   const state = createGame();
 
@@ -121,9 +142,26 @@ describe('getPiece and toGrid', () => {
     grid[0][0] = null;
     expect(getPiece(state, { row: 0, col: 0 })).not.toBeNull();
   });
+
+  it('returns copies of pieces, so editing one does not change the state', () => {
+    const fresh = createGame();
+    toGrid(fresh)[7][4].type = 'q';               // e1 king
+    getPiece(fresh, { row: 7, col: 3 }).color = 'b'; // d1 queen
+    expect(getPiece(fresh, { row: 7, col: 4 })).toEqual({ color: 'w', type: 'k' });
+    expect(getPiece(fresh, { row: 7, col: 3 })).toEqual({ color: 'w', type: 'q' });
+    expect(toFEN(fresh)).toBe(START_FEN);
+  });
 });
 
 describe('legalMovesFrom', () => {
+  it('returns no moves once the game is over, even if pieces could still move', () => {
+    // e.g. a draw (by rule or agreement) leaves movable pieces on the board.
+    const drawn = { ...createGame(), status: 'draw', drawReason: 'agreement' };
+    expect(legalMovesFrom(drawn, { row: 6, col: 4 })).toEqual([]); // e2
+    expect(legalMoves(drawn)).toEqual([]);
+    expect(isValidMove(drawn, 'e2e4')).toBe(false);
+  });
+
   it('returns the two pawn pushes from e2 at the start', () => {
     const targets = legalMovesFrom(createGame(), { row: 6, col: 4 });
     expect(targets).toEqual(expect.arrayContaining([
