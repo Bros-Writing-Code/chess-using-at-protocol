@@ -10,7 +10,9 @@ import sonarjs from 'eslint-plugin-sonarjs';
 export default defineConfig([
   // Vite builds into src/app/chessground-demo/dist.
   // src/bot/assets is a minified third-party Stockfish build.
-  globalIgnores(['**/dist/', '**/coverage/', 'src/bot/assets/']),
+  // .delta/ holds the git worktrees of Delta agents inside a local checkout;
+  // without this, linting from the checkout also lints duplicate repo copies.
+  globalIgnores(['**/dist/', '**/coverage/', 'src/bot/assets/', '**/.delta/']),
   {
     files: ['**/*.{js,mjs}'],
     extends: [js.configs.recommended],
