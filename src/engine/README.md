@@ -22,7 +22,7 @@ The six `getPossibleMoves...` functions do not filter out moves that leave the p
 
 ## gameState
 
-These three functions are exported from `gameState.js`.
+These functions are exported from `gameState.js`.
 
 | Function | Output | Purpose |
 | --- | --- | --- |
