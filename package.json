@@ -9,7 +9,9 @@
   "scripts": {
     "test": "vitest run",
     "dev": "vite src/app/chessground-demo",
-    "build": "vite build src/app/chessground-demo"
+    "build": "vite build src/app/chessground-demo",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "repository": {
     "type": "git",
@@ -25,6 +27,12 @@
   "homepage": "https://github.com/Bros-Writing-Code/chess-using-at-protocol#readme",
   "devDependencies": {
     "@atproto/lexicon": "^0.6.2",
+    "@eslint/js": "^10.0.1",
+    "@vitest/eslint-plugin": "^1.6.28",
+    "eslint": "^10.15.0",
+    "eslint-plugin-import-x": "^4.18.1",
+    "eslint-plugin-sonarjs": "^4.2.2",
+    "globals": "^17.14.0",
     "vite": "^5.4.21",
     "vitest": "^2.1.8"
   },
