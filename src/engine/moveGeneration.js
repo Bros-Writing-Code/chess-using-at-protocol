@@ -77,7 +77,7 @@ function pawnMoves(state, board, from, color) {
 }
 
 // Check whether a color attacks a square; pawn attacks differ from pawn advances.
-function isAttacked(board, target, color) {
+export function isAttacked(board, target, color) {
   const forward = color === 'w' ? NORTH : SOUTH;
   for (const side of [WEST, EAST]) {
     const pawn = pieceAt(board, target - forward - side);
@@ -156,7 +156,7 @@ export const getPossibleMovesQueen = (state, square) => possibleMoves(state, squ
 export const getPossibleMovesKing = (state, square) => possibleMoves(state, square, 'k');
 
 // Simulate a move on a copy, including en passant captures and castling rook moves.
-function boardAfterMove(state, board, from, to, piece) {
+export function boardAfterMove(state, board, from, to, piece) {
   const next = board.slice();
   next[from] = null;
   next[to] = piece;

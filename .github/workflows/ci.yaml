@@ -1,0 +1,23 @@
+name: CI
+
+on:                           # events that start the workflow
+  pull_request:               # any PR, against any branch
+  push:
+    branches: [main]          # also re-check main after each merge -> so that when two PRs are merged in quick succession, 
+                              # the second one is checked against the first one's changes
+
+permissions:                  # what the workflow is allowed to do
+  contents: read              # least privilege: this job only needs to read code
+
+jobs:                         # the actual work
+  test:                       # this job name becomes the status check name ("test") -> aka the job ID
+    runs-on: ubuntu-latest    # the VM that GitHub provides to run the job on
+    steps:
+      - uses: actions/checkout@v5      # clone the repo onto the runner
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24             # same Node major as local dev
+          cache: npm                   # reuse downloaded packages between runs
+      - run: npm ci                    # clean install from package-lock.json
+      - run: npm test
+      - run: npm run build             # optional, but catches broken builds before #6 deploys them
