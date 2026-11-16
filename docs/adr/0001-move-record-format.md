@@ -44,7 +44,7 @@ We publish **one game record** when a game is created, and **one move record per
 
 ```json
 {
-  "$type": "app.chess.game",
+  "$type": "app.knightsky.game",
   "white": "did:plc:alice...",
   "black": "did:plc:bob...",
   "startFen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
@@ -57,8 +57,8 @@ We publish **one game record** when a game is created, and **one move record per
 
 ```json
 {
-  "$type": "app.chess.move",
-  "game": "at://did:plc:alice.../app.chess.game/3k2x",
+  "$type": "app.knightsky.move",
+  "game": "at://did:plc:alice.../app.knightsky.game/3k2x",
   "uci": "e2e4",
   "fenAfter": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
   "createdAt": "2026-11-06T19:00:12Z"
@@ -122,6 +122,6 @@ ply of a move = plies(fenAfter) − plies(startFen)
 
 ## Open questions (for the AT team)
 
-- Final lexicon NSIDs (`app.chess.game`, `app.chess.move` are placeholders).
+- Lexicon NSIDs: proposed `app.knightsky.game` and `app.knightsky.move` (authority domain `knightsky.app`, which must be registered before the lexicons are published).
 - How resign, draw offers and game end are recorded (separate record types or a `type` field).
 - Polling vs. firehose subscription for receiving moves.
