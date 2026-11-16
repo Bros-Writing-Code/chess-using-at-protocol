@@ -1,5 +1,5 @@
 // @ts-check
-// Errors fail CI; warnings are printed but do not (see the `lint` script).
+// Errors fail CI; warnings don't.
 import js from '@eslint/js';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import globals from 'globals';
@@ -8,9 +8,8 @@ import vitest from '@vitest/eslint-plugin';
 import sonarjs from 'eslint-plugin-sonarjs';
 
 export default defineConfig([
-  // `**/` because Vite builds into src/app/chessground-demo/dist, not the repo root.
-  // src/bot/assets holds a minified Stockfish build copied from the stockfish npm
-  // package (#47): third-party output with nothing for us to fix.
+  // Vite builds into src/app/chessground-demo/dist.
+  // src/bot/assets is a minified third-party Stockfish build.
   globalIgnores(['**/dist/', '**/coverage/', 'src/bot/assets/']),
   {
     files: ['**/*.{js,mjs}'],
@@ -30,9 +29,7 @@ export default defineConfig([
       'import-x/default': 'error', // default import but no default export
       'import-x/namespace': 'error', // ns.foo where foo isn't exported
 
-      // Warn only. Limits are set so today's code warns only on functions that
-      // should be split up (applyMove, GameStatetoFEN, FENtoGameState), not on
-      // compact ones like kingMoves (23) or isAttacked (19).
+      // Warn only.
       complexity: ['warn', 25],
       'max-lines-per-function': ['warn', { max: 60, skipBlankLines: true, skipComments: true }],
       'sonarjs/no-identical-functions': 'warn',
@@ -42,8 +39,7 @@ export default defineConfig([
     // The engine must stay independent of the UI and ATProto layers.
     files: ['src/engine/**/*.js'],
     rules: {
-      // Our folders, matched by resolved file path, so any ../ depth and
-      // dynamic import() are caught and unrelated names like 'firebase/app' aren't.
+      // Matches resolved paths, so any ../ depth and import() are caught.
       'import-x/no-restricted-paths': ['error', {
         zones: [{
           target: './src/engine',
@@ -51,7 +47,7 @@ export default defineConfig([
           message: 'Engine code must not import from the UI or ATProto layers.',
         }],
       }],
-      // The libraries behind those layers, so the engine can't bypass the folders.
+      // Their libraries too, so the folder rule can't be bypassed.
       'no-restricted-imports': ['error', {
         patterns: [{
           group: ['@atproto/*', '@lichess-org/chessground', '@lichess-org/chessground/*'],
@@ -66,7 +62,7 @@ export default defineConfig([
     rules: {
       'vitest/expect-expect': 'error', // test with no assertions
       'vitest/no-focused-tests': 'error', // stray it.only / describe.only
-      // describe() callbacks are naturally long; the limit is for real functions.
+      // describe() blocks are naturally long.
       'max-lines-per-function': 'off',
     },
   },
