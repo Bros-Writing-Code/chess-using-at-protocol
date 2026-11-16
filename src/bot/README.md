@@ -19,7 +19,9 @@ game.move(uci);                                           // the engine validate
 bot.terminate();
 ```
 
-`getBotMove(fen, level)` returns a promise for a UCI move such as `e7e5` or `a7a8q`. It rejects if the level is invalid, the game is already over, or Stockfish does not answer in time. Show a "thinking…" state while the promise is pending, and lock the board.
+`getBotMove(fen, level)` returns a promise for a UCI move such as `e7e5` or `a7a8q`. It rejects if the level is invalid, the game is already over, or Stockfish fails to load, crashes, or does not answer in time. Show a "thinking…" state while the promise is pending, and lock the board.
+
+If Stockfish fails, crashes or hangs, the bot throws that Worker away and the next `getBotMove` starts a fresh one, so a late answer from the old Worker can never be returned for a new position. A missing or broken Stockfish file is reported right away ("Stockfish worker error: failed to load"); a Worker that loads but never answers times out after 15 s.
 
 ## Difficulty
 
@@ -42,7 +44,7 @@ bot.terminate();
 The browser has to load the two Stockfish files from a URL. By default the adapter looks for `/stockfish/stockfish-19-lite-single.js` (under Vite's base path). Two options for the app:
 
 1. Copy `src/bot/assets/stockfish/` into the app's static folder (for the Chessground demo, `src/app/chessground-demo/public/stockfish/`), and call `createStockfishBot()` as above, or
-2. Serve them anywhere and pass the URL: `createStockfishBot({ transport: createWorkerTransport('/path/to/stockfish-19-lite-single.js') })`.
+2. Serve them anywhere and pass the URL: `createStockfishBot({ createTransport: () => createWorkerTransport('/path/to/stockfish-19-lite-single.js') })`.
 
 Keep the `.js` and `.wasm` files in the same folder; the `.js` loads the `.wasm` next to it.
 - The "lite single-threaded" build is used because it is small and needs no special server headers. The full builds are ~99 MB, and the multi-threaded ones require cross-origin isolation headers.

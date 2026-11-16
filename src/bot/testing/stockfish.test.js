@@ -26,8 +26,15 @@ function fakeTransport({ autoHandshake = true, answer } = {}) {
       if (command.startsWith('go') && answer) queueMicrotask(() => answer(command, emit));
     },
     listen(callback) { onLine = callback; },
+    onError(callback) { this.crash = callback; },
     terminate() { this.terminated = true; },
   };
+}
+
+/** Bot whose every (re)start uses the next transport in `list`. */
+function botWith(...list) {
+  let next = 0;
+  return createStockfishBot({ createTransport: () => list[next++] });
 }
 
 describe('Stockfish adapter (fake engine)', () => {
@@ -35,7 +42,7 @@ describe('Stockfish adapter (fake engine)', () => {
 
   it('does the UCI handshake once, then searches with the level settings', async () => {
     const io = fakeTransport({ answer: (_, emit) => emit('bestmove e7e5 ponder g1f3') });
-    const bot = createStockfishBot({ transport: io });
+    const bot = botWith(io);
 
     await expect(bot.getBotMove(START, 'easy')).resolves.toBe('e7e5');
     await expect(bot.getBotMove(START, 'hard')).resolves.toBe('e7e5');
@@ -52,7 +59,7 @@ describe('Stockfish adapter (fake engine)', () => {
 
   it('supports an Elo target and a skill slider', async () => {
     const io = fakeTransport({ answer: (_, emit) => emit('bestmove c7c5') });
-    const bot = createStockfishBot({ transport: io });
+    const bot = botWith(io);
     await bot.getBotMove(START, { elo: 1800 });
     await bot.getBotMove(START, { skill: 12, movetime: 400 });
     expect(io.sent).toEqual(expect.arrayContaining([
@@ -76,7 +83,7 @@ describe('Stockfish adapter (fake engine)', () => {
 
   it('defaults to medium', async () => {
     const io = fakeTransport({ answer: (_, emit) => emit('bestmove d7d5') });
-    await createStockfishBot({ transport: io }).getBotMove(START);
+    await botWith(io).getBotMove(START);
     expect(io.sent).toContain(`setoption name Skill Level value ${LEVELS.medium.skill}`);
   });
 
@@ -84,14 +91,14 @@ describe('Stockfish adapter (fake engine)', () => {
     const io = fakeTransport({
       answer: (_, emit) => { emit('info depth 5 score cp 900'); emit('bestmove a7a8q'); },
     });
-    await expect(createStockfishBot({ transport: io }).getBotMove('8/P6k/8/8/8/8/8/K7 w - - 0 1')).resolves.toBe('a7a8q');
+    await expect(botWith(io).getBotMove('8/P6k/8/8/8/8/8/K7 w - - 0 1')).resolves.toBe('a7a8q');
   });
 
   it('answers overlapping requests in order, one search at a time', async () => {
     let n = 0;
     const replies = ['bestmove e2e4', 'bestmove d2d4'];
     const io = fakeTransport({ answer: (_, emit) => setTimeout(() => emit(replies[n++]), 5) });
-    const bot = createStockfishBot({ transport: io });
+    const bot = botWith(io);
 
     const [first, second] = await Promise.all([bot.getBotMove(START), bot.getBotMove(START)]);
     expect([first, second]).toEqual(['e2e4', 'd2d4']);
@@ -99,12 +106,12 @@ describe('Stockfish adapter (fake engine)', () => {
 
   it('rejects when the game is already over', async () => {
     const io = fakeTransport({ answer: (_, emit) => emit('bestmove (none)') });
-    await expect(createStockfishBot({ transport: io }).getBotMove(START)).rejects.toThrow(/no legal move/i);
+    await expect(botWith(io).getBotMove(START)).rejects.toThrow(/no legal move/i);
   });
 
   it('rejects bad input without talking to Stockfish', async () => {
     const io = fakeTransport();
-    const bot = createStockfishBot({ transport: io });
+    const bot = botWith(io);
     await expect(bot.getBotMove(START, 'impossible')).rejects.toThrow(/Unknown level/);
     await expect(bot.getBotMove('')).rejects.toThrow(/FEN/);
     expect(io.sent.some((c) => c.startsWith('go'))).toBe(false);
@@ -113,7 +120,7 @@ describe('Stockfish adapter (fake engine)', () => {
   it('sends "stop" when Stockfish runs long, then rejects if it never answers', async () => {
     vi.useFakeTimers();
     const io = fakeTransport(); // never answers "go"
-    const bot = createStockfishBot({ transport: io });
+    const bot = botWith(io);
     const move = bot.getBotMove(START, 'easy');
     const failed = expect(move).rejects.toThrow(/did not answer/);
 
@@ -131,33 +138,79 @@ describe('Stockfish adapter (fake engine)', () => {
       originalSend(command);
       if (command === 'stop') queueMicrotask(() => io.emit('bestmove g8f6'));
     };
-    const move = createStockfishBot({ transport: io }).getBotMove(START, 'easy');
+    const move = botWith(io).getBotMove(START, 'easy');
     await vi.advanceTimersByTimeAsync(LEVELS.easy.movetime + 3000);
     await expect(move).resolves.toBe('g8f6');
   });
 
-  it('does not hand a late answer from a timed-out search to the next one', async () => {
+  it('restarts Stockfish after a timeout, so a late answer cannot leak into the next search', async () => {
     vi.useFakeTimers();
-    let calls = 0;
-    const io = fakeTransport({
-      answer: (_, emit) => { calls += 1; if (calls === 2) emit('bestmove d7d5'); },
-    });
-    const bot = createStockfishBot({ transport: io });
+    const stuck = fakeTransport(); // never answers "go"
+    const fresh = fakeTransport({ answer: (_, emit) => emit('bestmove d7d5') });
+    const bot = botWith(stuck, fresh);
 
     const first = bot.getBotMove(START, 'easy');
     const firstFailed = expect(first).rejects.toThrow(/did not answer/);
     await vi.advanceTimersByTimeAsync(LEVELS.easy.movetime + 5000);
     await firstFailed;
+    expect(stuck.terminated).toBe(true);
 
-    // The first search's late answer arrives now; it must be ignored.
-    io.emit('bestmove h7h6');
+    stuck.emit('bestmove h7h6'); // the old engine's late answer goes nowhere
     await expect(bot.getBotMove(START, 'easy')).resolves.toBe('d7d5');
-    expect(io.sent.filter((c) => c === 'isready')).toHaveLength(2); // resync before the 2nd search
+    expect(fresh.sent[0]).toBe('uci'); // a brand-new handshake
+  });
+
+  it('rejects if Stockfish never finishes starting, then retries with a fresh one', async () => {
+    vi.useFakeTimers();
+    const silent = fakeTransport({ autoHandshake: false });
+    const working = fakeTransport({ answer: (_, emit) => emit('bestmove e7e6') });
+    const bot = botWith(silent, working);
+
+    const first = bot.getBotMove(START);
+    const failed = expect(first).rejects.toThrow(/failed to start/);
+    await vi.advanceTimersByTimeAsync(15_000);
+    await failed;
+    expect(silent.terminated).toBe(true);
+    expect(silent.sent.some((c) => c.startsWith('go'))).toBe(false);
+
+    await expect(bot.getBotMove(START)).resolves.toBe('e7e6');
+  });
+
+  it('rejects right away if the Worker fails to load', async () => {
+    const broken = fakeTransport({ autoHandshake: false });
+    const bot = botWith(broken);
+    const move = bot.getBotMove(START);
+    await vi.waitFor(() => expect(broken.crash).toBeTypeOf('function')); // worker created
+    broken.crash(new Error('Stockfish worker error: failed to load'));
+    await expect(move).rejects.toThrow(/failed to load/);
+    expect(broken.terminated).toBe(true);
+  });
+
+  it('rejects the current search if the Worker crashes mid-search, then restarts', async () => {
+    const crashing = fakeTransport({
+      answer: () => queueMicrotask(() => crashing.crash(new Error('Stockfish worker error: out of memory'))),
+    });
+    const working = fakeTransport({ answer: (_, emit) => emit('bestmove g8f6') });
+    const bot = botWith(crashing, working);
+
+    await expect(bot.getBotMove(START)).rejects.toThrow(/out of memory/);
+    await expect(bot.getBotMove(START)).resolves.toBe('g8f6');
+  });
+
+  it('keeps the same Stockfish after a normal "game over" answer', async () => {
+    let created = 0;
+    const io = fakeTransport({ answer: (_, emit) => emit('bestmove (none)') });
+    const bot = createStockfishBot({ createTransport: () => { created += 1; return io; } });
+    await expect(bot.getBotMove(START)).rejects.toThrow(/no legal move/);
+    await expect(bot.getBotMove(START)).rejects.toThrow(/no legal move/);
+    expect(created).toBe(1);
+    expect(io.terminated).toBe(false);
   });
 
   it('stops working after terminate()', async () => {
-    const io = fakeTransport();
-    const bot = createStockfishBot({ transport: io });
+    const io = fakeTransport({ answer: (_, emit) => emit('bestmove e7e5') });
+    const bot = botWith(io);
+    await bot.getBotMove(START);
     bot.terminate();
     expect(io.terminated).toBe(true);
     await expect(bot.getBotMove(START)).rejects.toThrow(/terminated/);
@@ -195,7 +248,7 @@ function legalMoves(fen) {
 }
 
 describe('Stockfish adapter (real engine)', () => {
-  const bot = createStockfishBot({ transport: nodeTransport() });
+  const bot = createStockfishBot({ createTransport: nodeTransport });
 
   it.each(['easy', 'medium', 'hard', 'max'])('returns a legal move at %s level', async (level) => {
     const move = await bot.getBotMove(START, level);

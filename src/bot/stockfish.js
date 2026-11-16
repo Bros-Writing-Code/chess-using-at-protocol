@@ -83,6 +83,8 @@ export function resolveLevel(level) {
 const STOP_GRACE_MS = 3000;
 /** Extra time to wait after "stop" before giving up on an answer. */
 const FAIL_GRACE_MS = 2000;
+/** How long Stockfish may take to load and answer the UCI handshake. */
+const STARTUP_TIMEOUT_MS = 15000;
 
 const BESTMOVE = /^bestmove\s+(\S+)/;
 const UCI_MOVE = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
@@ -94,6 +96,8 @@ const UCI_MOVE = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
  * @typedef {Object} Transport
  * @property {(command: string) => void} send
  * @property {(onLine: (line: string) => void) => void} listen
+ * @property {(onError: (error: Error) => void) => void} [onError]
+ *   Called if the engine crashes or fails to load (optional).
  * @property {() => void} terminate
  */
 
@@ -121,41 +125,70 @@ export function createWorkerTransport(url = defaultWorkerUrl()) {
     listen: (onLine) => {
       worker.onmessage = (event) => onLine(String(event.data));
     },
+    onError: (onError) => {
+      worker.onerror = (event) => {
+        event.preventDefault?.();
+        onError(new Error(`Stockfish worker error: ${event.message || 'failed to load'}`));
+      };
+      worker.onmessageerror = () => onError(new Error('Stockfish worker sent an unreadable message'));
+    },
     terminate: () => worker.terminate(),
   };
+}
+
+/**
+ * Rejects after `ms` with `message`. Returns the promise and a cancel function.
+ * @param {number} ms
+ * @param {string} message
+ */
+function deadline(ms, message) {
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  let timer;
+  const promise = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return { promise, cancel: () => clearTimeout(timer) };
 }
 
 /**
  * Creates a Stockfish opponent. Requests are answered one at a time, in the
  * order they were made.
  *
- * @param {{ transport?: Transport }} [options] - Inject a transport for tests;
- *   defaults to a Web Worker.
+ * If Stockfish fails to start, crashes, or stops answering, the current
+ * request rejects and the Worker is thrown away; the next request starts a
+ * fresh one. A late answer from the old Worker can therefore never be
+ * mistaken for the answer to a new position.
+ *
+ * @param {{ createTransport?: () => Transport }} [options] - Inject a
+ *   transport factory for tests; defaults to a new Web Worker each time.
  * @example
  *   const bot = createStockfishBot();
  *   const uci = await bot.getBotMove(game.fen(), 'medium');  // e.g. "e7e5"
  *   game.move(uci);                                          // engine validates it
  */
-export function createStockfishBot({ transport } = {}) {
-  const io = transport ?? createWorkerTransport();
+export function createStockfishBot({ createTransport = () => createWorkerTransport() } = {}) {
+  /**
+   * One running Stockfish instance and everything tied to it.
+   * @typedef {Object} Engine
+   * @property {Transport} io
+   * @property {Array<(line: string) => boolean>} waiters
+   * @property {Promise<never>} crashed - Rejects if the engine reports an error.
+   * @property {Promise<void>} ready - Resolves after the UCI handshake.
+   */
 
-  /** @type {Array<(line: string) => boolean>} */
-  let waiters = [];
-  io.listen((line) => {
-    // Hand each line to the first waiter that wants it.
-    const index = waiters.findIndex((wants) => wants(line));
-    if (index !== -1) waiters.splice(index, 1);
-  });
+  /** @type {Engine | null} */
+  let engine = null;
+  let terminated = false;
 
   /**
-   * Resolves with the first line that `match` accepts. `cancel` removes the
-   * waiter, so a late answer from a timed-out search can't be mistaken for
-   * the answer to the next one.
+   * Resolves with the first line from `target` that `match` accepts. `cancel`
+   * removes the waiter if the caller gives up.
    *
+   * @param {Engine} target
    * @param {(line: string) => boolean} match
    * @returns {Promise<string> & { cancel: () => void }}
    */
-  function waitFor(match) {
+  function waitFor(target, match) {
     /** @type {(line: string) => boolean} */
     let waiter = () => false;
     const promise = new Promise((resolve) => {
@@ -164,50 +197,69 @@ export function createStockfishBot({ transport } = {}) {
         resolve(line);
         return true;
       };
-      waiters.push(waiter);
+      target.waiters.push(waiter);
     });
     return Object.assign(promise, {
-      cancel: () => { waiters = waiters.filter((w) => w !== waiter); },
+      cancel: () => { target.waiters = target.waiters.filter((w) => w !== waiter); },
     });
   }
 
-  // UCI handshake, done once: "uci" → "uciok", then "isready" → "readyok".
-  const ready = (async () => {
-    const uciok = waitFor((line) => line === 'uciok');
-    io.send('uci');
-    await uciok;
-    const readyok = waitFor((line) => line === 'readyok');
-    io.send('isready');
-    await readyok;
-  })();
+  /** Starts a fresh Stockfish and its UCI handshake. */
+  function start() {
+    const io = createTransport();
+    /** @type {(error: Error) => void} */
+    let fail = () => {};
+    /** @type {Engine} */
+    const fresh = {
+      io,
+      waiters: [],
+      crashed: new Promise((_, reject) => { fail = reject; }),
+      ready: Promise.resolve(),
+    };
+    fresh.crashed.catch(() => {}); // only observed while a request is running
 
-  /** Chain of requests, so concurrent calls never mix up their answers. */
-  let queue = Promise.resolve();
-  let terminated = false;
-  let needsResync = false;
+    io.listen((line) => {
+      // Hand each line to the first waiter that wants it.
+      const index = fresh.waiters.findIndex((wants) => wants(line));
+      if (index !== -1) fresh.waiters.splice(index, 1);
+    });
+    io.onError?.((error) => fail(error));
+
+    // UCI handshake: "uci" → "uciok", then "isready" → "readyok".
+    const handshake = (async () => {
+      const uciok = waitFor(fresh, (line) => line === 'uciok');
+      io.send('uci');
+      await uciok;
+      const readyok = waitFor(fresh, (line) => line === 'readyok');
+      io.send('isready');
+      await readyok;
+    })();
+    const limit = deadline(STARTUP_TIMEOUT_MS, 'Stockfish failed to start in time');
+    fresh.ready = Promise.race([handshake, fresh.crashed, limit.promise]).finally(limit.cancel);
+
+    return fresh;
+  }
+
+  /** Throws away the current Stockfish; the next request starts a new one. */
+  function discard() {
+    if (!engine) return;
+    engine.waiters = [];
+    engine.io.terminate();
+    engine = null;
+  }
 
   /**
-   * One search. Assumes the handshake is done and no other search is running.
+   * One search on a ready engine.
+   * @param {Engine} current
    * @param {string} fen
    * @param {{ options: string[], movetime: number }} settings
    * @returns {Promise<string>}
    */
-  async function search(fen, { options, movetime }) {
-    if (needsResync) {
-      // A previous search timed out and may still answer late. UCI handles
-      // commands in order, so once "readyok" arrives any late "bestmove" has
-      // already gone by (and was ignored, since nobody was waiting for it).
-      const synced = waitFor((line) => line === 'readyok');
-      io.send('stop');
-      io.send('isready');
-      await synced;
-      needsResync = false;
-    }
-
-    const answer = waitFor((line) => BESTMOVE.test(line));
-    options.forEach((option) => io.send(option));
-    io.send(`position fen ${fen}`);
-    io.send(`go movetime ${movetime}`);
+  async function search(current, fen, { options, movetime }) {
+    const answer = waitFor(current, (line) => BESTMOVE.test(line));
+    options.forEach((option) => current.io.send(option));
+    current.io.send(`position fen ${fen}`);
+    current.io.send(`go movetime ${movetime}`);
 
     /** @type {ReturnType<typeof setTimeout> | undefined} */
     let stopTimer;
@@ -215,16 +267,16 @@ export function createStockfishBot({ transport } = {}) {
     let failTimer;
     const timedOut = new Promise((_, reject) => {
       stopTimer = setTimeout(() => {
-        io.send('stop'); // ask for its best move so far
-        failTimer = setTimeout(() => {
-          needsResync = true;
-          reject(new Error('Stockfish did not answer in time'));
-        }, FAIL_GRACE_MS);
+        current.io.send('stop'); // ask for its best move so far
+        failTimer = setTimeout(
+          () => reject(new Error('Stockfish did not answer in time')),
+          FAIL_GRACE_MS,
+        );
       }, movetime + STOP_GRACE_MS);
     });
 
     try {
-      const line = await Promise.race([answer, timedOut]);
+      const line = await Promise.race([answer, timedOut, current.crashed]);
       const move = /** @type {RegExpMatchArray} */ (line.match(BESTMOVE))[1];
       if (move === '(none)') throw new Error('Stockfish has no legal move (game over)');
       if (!UCI_MOVE.test(move)) throw new Error(`Unexpected Stockfish move: ${move}`);
@@ -236,6 +288,31 @@ export function createStockfishBot({ transport } = {}) {
     }
   }
 
+  /**
+   * Starts Stockfish if needed, waits for the handshake, then searches.
+   * Restarts on the next call if this engine fails to start, crashes, or hangs.
+   *
+   * @param {string} fen
+   * @param {{ options: string[], movetime: number }} settings
+   */
+  async function run(fen, settings) {
+    if (terminated) throw new Error('Stockfish was terminated');
+    if (!engine) engine = start();
+    const current = engine;
+    try {
+      await current.ready;
+      return await search(current, fen, settings);
+    } catch (error) {
+      const message = /** @type {Error} */ (error).message;
+      // A finished game is a normal answer; anything else means this engine is unreliable.
+      if (!/no legal move|Unexpected Stockfish move/.test(message) && engine === current) discard();
+      throw error;
+    }
+  }
+
+  /** Chain of requests, so concurrent calls never mix up their answers. */
+  let queue = Promise.resolve();
+
   return {
     /**
      * Asks Stockfish for a move in the given position.
@@ -244,7 +321,8 @@ export function createStockfishBot({ transport } = {}) {
      * @param {Level} [level='medium'] - e.g. 'hard', { skill: 12 }, { elo: 1800 }
      * @returns {Promise<string>} A UCI move such as "e7e5" or "a7a8q".
      *   Rejects if the level is invalid, the bot was terminated, the game is
-     *   already over, or Stockfish does not answer in time.
+     *   already over, or Stockfish fails to start, crashes, or does not answer
+     *   in time (the next call then starts a fresh Stockfish).
      */
     getBotMove(fen, level = 'medium') {
       const settings = resolveLevel(level);
@@ -254,7 +332,7 @@ export function createStockfishBot({ transport } = {}) {
         return Promise.reject(new Error('A FEN string is required'));
       }
 
-      const result = queue.then(() => ready).then(() => search(fen, settings));
+      const result = queue.then(() => run(fen, settings));
       queue = result.catch(() => {}); // keep the chain going after a failure
       return result;
     },
@@ -262,8 +340,7 @@ export function createStockfishBot({ transport } = {}) {
     /** Stops Stockfish and frees its memory. Call when leaving the page. */
     terminate() {
       terminated = true;
-      waiters = [];
-      io.terminate();
+      discard();
     },
   };
 }
