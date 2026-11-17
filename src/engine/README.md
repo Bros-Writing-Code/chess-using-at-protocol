@@ -64,7 +64,7 @@ const { status, winner } = getGameStatus(state);           // 'active' | 'checkm
 | `replayMoves(ucis, startFen = START_FEN)` | `Result<GameState>`; the error names the failing move |
 | `isInCheck(state)` | `boolean` |
 | `getGameStatus(state)` | `{ status, winner, drawReason }` |
-| `toFEN(state)` / `fromFEN(fen)` | FEN string / `GameState` |
+| `GameStatetoFEN(state)` | FEN string (to load a FEN, use `createGame(fen)`) |
 | `moveToUCI(move)` / `UCItoMove(uci)` | UCI string / `Move` |
 | `printBoard(state.board)` | ASCII board (debug only) |
 

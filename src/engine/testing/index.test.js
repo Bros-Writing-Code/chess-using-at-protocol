@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import * as engine from '../index.js';
+import * as engineModule from '../index.js';
 import {
   START_FEN,
   createGame,
@@ -12,8 +12,7 @@ import {
   applyMove,
   isInCheck,
   getGameStatus,
-  toFEN,
-  fromFEN,
+  GameStatetoFEN,
 } from '../index.js';
 
 /** Apply moves that must all be legal; fails the test otherwise. */
@@ -35,13 +34,18 @@ function deepFreeze(value) {
   return value;
 }
 
+// Plain-object copy so tests can look up exports by name (ESLint can't check
+// computed lookups on a module namespace).
+/** @type {Record<string, unknown>} */
+const engine = { ...engineModule };
+
 describe('public API surface', () => {
   it('exports every function in the engine contract', () => {
     const expected = [
       'createGame', 'getPiece', 'toGrid', 'replayMoves',
       'legalMovesFrom', 'legalMoves', 'isValidMove', 'applyMove',
       'isInCheck', 'getGameStatus',
-      'toFEN', 'fromFEN', 'moveToUCI', 'UCItoMove', 'printBoard',
+      'GameStatetoFEN', 'moveToUCI', 'UCItoMove', 'printBoard',
     ];
     for (const name of expected) {
       expect(typeof engine[name], name).toBe('function');
@@ -65,19 +69,19 @@ describe('public API surface', () => {
       isInCheck(state);
       getGameStatus(state);
       toGrid(state);
-      toFEN(state);
+      GameStatetoFEN(state);
     }).not.toThrow();
   });
 });
 
 describe('createGame', () => {
   it('starts from the standard position', () => {
-    expect(toFEN(createGame())).toBe(START_FEN);
+    expect(GameStatetoFEN(createGame())).toBe(START_FEN);
   });
 
   it('accepts a custom FEN', () => {
     const fen = '4k3/8/8/8/8/8/8/4K3 w - - 0 1';
-    expect(toFEN(createGame(fen))).toBe(fen);
+    expect(GameStatetoFEN(createGame(fen))).toBe(fen);
   });
 
   it('returns a fresh, unshared object every call', () => {
@@ -149,7 +153,7 @@ describe('getPiece and toGrid', () => {
     getPiece(fresh, { row: 7, col: 3 }).color = 'b'; // d1 queen
     expect(getPiece(fresh, { row: 7, col: 4 })).toEqual({ color: 'w', type: 'k' });
     expect(getPiece(fresh, { row: 7, col: 3 })).toEqual({ color: 'w', type: 'q' });
-    expect(toFEN(fresh)).toBe(START_FEN);
+    expect(GameStatetoFEN(fresh)).toBe(START_FEN);
   });
 });
 
@@ -218,7 +222,7 @@ describe('applyMove and status through the public API', () => {
   it('plays a move and reports the new position', () => {
     const state = play(createGame(), 'e2e4');
     expect(state.currentTurn).toBe('b');
-    expect(toFEN(state).split(' ').slice(0, 4).join(' '))
+    expect(GameStatetoFEN(state).split(' ').slice(0, 4).join(' '))
       .toBe('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3');
   });
 
@@ -239,7 +243,7 @@ describe('replayMoves', () => {
   });
 
   it('returns the starting position for an empty list', () => {
-    expect(toFEN(replayMoves([]).value)).toBe(START_FEN);
+    expect(GameStatetoFEN(replayMoves([]).value)).toBe(START_FEN);
   });
 
   it('reports which move failed', () => {
@@ -260,8 +264,14 @@ describe('replayMoves', () => {
   });
 });
 
-describe('notation aliases', () => {
-  it('toFEN and fromFEN round-trip', () => {
-    expect(toFEN(fromFEN(START_FEN))).toBe(START_FEN);
+describe('FEN round-trip', () => {
+  it('createGame and GameStatetoFEN round-trip', () => {
+    expect(GameStatetoFEN(createGame(START_FEN))).toBe(START_FEN);
+  });
+
+  it('does not export the short names or FENtoGameState', () => {
+    for (const name of ['toFEN', 'fromFEN', 'FENtoGameState']) {
+      expect(engine[name], name).toBeUndefined();
+    }
   });
 });

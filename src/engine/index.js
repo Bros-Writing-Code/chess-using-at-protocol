@@ -27,12 +27,8 @@ export { applyMove } from './gameState.js';
 export { isInCheck, getGameStatus } from './gameState.js';
 
 // Notation
-export {
-  GameStatetoFEN as toFEN,
-  FENtoGameState as fromFEN,
-  moveToUCI,
-  UCItoMove,
-} from './notation.js';
+// To load a position from a FEN, use createGame(fen): it also sets the status.
+export { GameStatetoFEN, moveToUCI, UCItoMove } from './notation.js';
 
 // Debugging only: printBoard(state.board) prints an ASCII board
 export { printBoard } from './0x88helper.js';

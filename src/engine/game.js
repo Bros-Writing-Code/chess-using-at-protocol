@@ -24,19 +24,6 @@ export const START_FEN =
   'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 /**
- * Parses a FEN and fills in status / winner / drawReason for that position,
- * so a game loaded from a finished position is already marked as over.
- *
- * @param {string} fen
- * @returns {GameState}
- * @throws {Error} If the FEN is malformed.
- */
-function stateFromFEN(fen) {
-  const state = FENtoGameState(fen);
-  return { ...state, ...getGameStatus(state) };
-}
-
-/**
  * Creates a new game. Returns a fresh object on every call, so two games
  * never share a board. The status already reflects the position, so a
  * checkmate or stalemate FEN starts as finished.
@@ -47,7 +34,8 @@ function stateFromFEN(fen) {
  * @example const state = createGame();
  */
 export function createGame(fen = START_FEN) {
-  return stateFromFEN(fen);
+  const state = FENtoGameState(fen);
+  return { ...state, ...getGameStatus(state) };
 }
 
 /**
@@ -177,7 +165,7 @@ export function replayMoves(ucis, startFen = START_FEN) {
   /** @type {GameState} */
   let state;
   try {
-    state = stateFromFEN(startFen);
+    state = createGame(startFen);
   } catch (e) {
     return { ok: false, error: `Invalid start position: ${/** @type {Error} */ (e).message}` };
   }
