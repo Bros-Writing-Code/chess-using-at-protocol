@@ -1,23 +1,49 @@
-name: CI
+# Tests and builds every PR. After each merge to main, also deploys the built site to GitHub Pages.
+name: CI                                  # workflow name shown in the Actions tab
 
-on:                           # events that start the workflow
-  pull_request:               # any PR, against any branch
-  push:
-    branches: [main]          # also re-check main after each merge -> so that when two PRs are merged in quick succession, 
-                              # the second one is checked against the first one's changes
+on:                                       # events that start this workflow
+  pull_request:                           # any PR, against any branch
+  push:                                   # a push, e.g. a merged PR...
+    branches: [main]                      # ...but only to main: re-checks main after each merge, so when two PRs
+                                          # merge in quick succession, the second is checked against the first one's changes
 
-permissions:                  # what the workflow is allowed to do
-  contents: read              # least privilege: this job only needs to read code
+permissions:                              # what the workflow's GitHub token may do
+  contents: read                          # default for every job: read the code only (deploy adds its own below)
 
-jobs:                         # the actual work
-  test:                       # this job name becomes the status check name ("test") -> aka the job ID
-    runs-on: ubuntu-latest    # the VM that GitHub provides to run the job on
-    steps:
-      - uses: actions/checkout@v5      # clone the repo onto the runner
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24             # same Node major as local dev
-          cache: npm                   # reuse downloaded packages between runs
-      - run: npm ci                    # clean install from package-lock.json
-      - run: npm test
-      - run: npm run build             # optional, but catches broken builds before #6 deploys them
+jobs:                                     # the actual work; jobs run in parallel unless one "needs" another
+  test:                                   # job ID; also the status check name ("test") shown on PRs
+    runs-on: ubuntu-latest                # a fresh Linux VM that GitHub provides for this job
+    steps:                                # run top to bottom; a failing step stops the job
+      - uses: actions/checkout@v5         # clone the repo onto the VM
+      - uses: actions/setup-node@v5       # install Node.js
+        with:                             # inputs for setup-node
+          node-version: 24                # same Node major as local dev
+          cache: npm                      # reuse downloaded packages between runs (faster installs)
+      - run: npm ci                       # clean install, exactly as pinned in package-lock.json
+      - run: npm test                     # run the unit tests (vitest)
+      - run: npm run build                # build the app into dist/; catches broken builds, and dist/ is what gets deployed
+        env:                              # environment variables for this step only
+          SITE_URL: ${{ vars.SITE_URL }}  # site URL from the SITE_URL repo variable; vite.config.js turns it into the base path
+      - uses: actions/upload-pages-artifact@v5  # pack dist/ into an artifact that the deploy job publishes
+        # only on a push to main, so PR runs never produce anything deployable
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:                             # inputs for upload-pages-artifact
+          path: dist                      # the folder to pack (Vite's output)
+
+  deploy:                                 # job ID; publishes the site
+    needs: test                           # waits for "test" to pass; skipped if it fails
+    # only after a merge to main, never from a PR
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest                # its own fresh VM; no checkout needed, it only uses the artifact
+    permissions:                          # replaces the top-level permissions, for this job only
+      pages: write                        # allowed to publish to GitHub Pages
+      id-token: write                     # lets Pages verify that this run really comes from this repo (OIDC)
+    environment:                          # deploy through a GitHub environment, which has its own rules
+      name: github-pages                  # created when Pages was set to "GitHub Actions"; only main may deploy to it
+      url: ${{ steps.deployment.outputs.page_url }}  # live site link, shown on the run page
+    concurrency:                          # controls deploys that overlap
+      group: pages                        # all deploys share this group, so only one runs at a time
+      cancel-in-progress: false           # a new deploy waits for the running one instead of cutting it off halfway
+    steps:                                # this job has a single step
+      - id: deployment                    # step ID, so "url" above can read this step's output
+        uses: actions/deploy-pages@v5     # publish the artifact from the test job to GitHub Pages
