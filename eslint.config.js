@@ -8,7 +8,7 @@ import vitest from '@vitest/eslint-plugin';
 import sonarjs from 'eslint-plugin-sonarjs';
 
 export default defineConfig([
-  // Vite builds into src/app/chessground-demo/dist.
+  // Vite builds into dist/.
   // src/bot/assets is a minified third-party Stockfish build.
   // .delta/ holds the git worktrees of Delta agents inside a local checkout;
   // without this, linting from the checkout also lints duplicate repo copies.
