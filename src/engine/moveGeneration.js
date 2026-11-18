@@ -19,12 +19,12 @@ function boardOf(state) {
 // Validate coordinates before converting; invalid values could map to another valid square.
 function indexOf(square) {
   if (!square || !Number.isInteger(square.row) || !Number.isInteger(square.col) ||
-      square.row < 0 || square.row > 7 || square.col < 0 || square.col > 7) return -1;
+      square.row < 0 || square.row > 7 || square.col < 0 || square.col > 7) {return -1;}
   return fromSquare(square);
 }
 
 function canLand(board, to, color) {
-  if (!onBoard(to)) return false;
+  if (!onBoard(to)) {return false;}
   const target = pieceAt(board, to);
   // A king cannot be captured; attacked-square checks handle check instead.
   return !target || (target.color !== color && target.type !== 'k');
@@ -41,9 +41,9 @@ function slidingMoves(board, from, color, directions) {
   for (const direction of directions) {
     for (let to = from + direction; onBoard(to); to += direction) {
       const target = pieceAt(board, to);
-      if (!target) moves.push(to);
+      if (!target) {moves.push(to);}
       else {
-        if (target.color !== color && target.type !== 'k') moves.push(to);
+        if (target.color !== color && target.type !== 'k') {moves.push(to);}
         break;
       }
     }
@@ -59,18 +59,18 @@ function pawnMoves(state, board, from, color) {
     moves.push(one);
     const startRow = color === 'w' ? 6 : 1;
     const two = one + forward;
-    if (rowOf(from) === startRow && !pieceAt(board, two)) moves.push(two);
+    if (rowOf(from) === startRow && !pieceAt(board, two)) {moves.push(two);}
   }
   const ep = state.enPassantTarget;
   for (const side of [WEST, EAST]) {
     const to = from + forward + side;
-    if (!onBoard(to)) continue;
+    if (!onBoard(to)) {continue;}
     const target = pieceAt(board, to);
-    if (target && target.color !== color && target.type !== 'k') moves.push(to);
+    if (target && target.color !== color && target.type !== 'k') {moves.push(to);}
     else if (!target && to === ep) {
       // En passant requires an empty target square and an adjacent enemy pawn.
       const captured = pieceAt(board, from + side);
-      if (captured?.type === 'p' && captured.color !== color) moves.push(to);
+      if (captured?.type === 'p' && captured.color !== color) {moves.push(to);}
     }
   }
   return moves;
@@ -81,21 +81,21 @@ export function isAttacked(board, target, color) {
   const forward = color === 'w' ? NORTH : SOUTH;
   for (const side of [WEST, EAST]) {
     const pawn = pieceAt(board, target - forward - side);
-    if (pawn?.color === color && pawn.type === 'p') return true;
+    if (pawn?.color === color && pawn.type === 'p') {return true;}
   }
   for (const offset of KNIGHT_OFFSETS) {
     const knight = pieceAt(board, target + offset);
-    if (knight?.color === color && knight.type === 'n') return true;
+    if (knight?.color === color && knight.type === 'n') {return true;}
   }
   for (const direction of ALL_DIRECTIONS) {
     const diagonal = DIAGONALS.includes(direction);
     let distance = 1;
     for (let from = target + direction; onBoard(from); from += direction, distance++) {
       const attacker = pieceAt(board, from);
-      if (!attacker) continue;
+      if (!attacker) {continue;}
       if (attacker.color === color &&
           (attacker.type === 'q' || (diagonal ? attacker.type === 'b' : attacker.type === 'r') ||
-           (distance === 1 && attacker.type === 'k'))) return true;
+           (distance === 1 && attacker.type === 'k'))) {return true;}
       break;
     }
   }
@@ -105,20 +105,20 @@ export function isAttacked(board, target, color) {
 function kingMoves(state, board, from, color) {
   const moves = stepMoves(board, from, color, ALL_DIRECTIONS);
   const homeRow = color === 'w' ? 7 : 0;
-  if (from !== toIndex(homeRow, 4)) return moves;
+  if (from !== toIndex(homeRow, 4)) {return moves;}
   const enemy = color === 'w' ? 'b' : 'w';
-  if (isAttacked(board, from, enemy)) return moves;
+  if (isAttacked(board, from, enemy)) {return moves;}
   for (const kingside of [true, false]) {
     const allowed = color === 'w'
       ? (kingside ? state.castlingRights?.wKingside : state.castlingRights?.wQueenside)
       : (kingside ? state.castlingRights?.bKingside : state.castlingRights?.bQueenside);
-    if (!allowed) continue;
+    if (!allowed) {continue;}
     const rook = pieceAt(board, toIndex(homeRow, kingside ? 7 : 0));
-    if (rook?.type !== 'r' || rook.color !== color) continue;
+    if (rook?.type !== 'r' || rook.color !== color) {continue;}
     const between = kingside ? [5, 6] : [3, 2, 1];
-    if (between.some(col => pieceAt(board, toIndex(homeRow, col)))) continue;
+    if (between.some(col => pieceAt(board, toIndex(homeRow, col)))) {continue;}
     const step = kingside ? EAST : WEST;
-    if (isAttacked(board, from + step, enemy) || isAttacked(board, from + 2 * step, enemy)) continue;
+    if (isAttacked(board, from + step, enemy) || isAttacked(board, from + 2 * step, enemy)) {continue;}
     moves.push(from + 2 * step);
   }
   return moves;
@@ -140,10 +140,10 @@ function candidates(state, board, from, piece) {
 
 function possibleMoves(state, square, type) {
   const from = indexOf(square);
-  if (from < 0) return [];
+  if (from < 0) {return [];}
   const board = boardOf(state);
   const piece = pieceAt(board, from);
-  if (!piece || piece.type !== type) return [];
+  if (!piece || piece.type !== type) {return [];}
   return candidates(state, board, from, piece).map(toSquare);
 }
 
@@ -176,10 +176,10 @@ export function boardAfterMove(state, board, from, to, piece) {
 // Return legal target squares for the current player's selected piece without mutating state.
 export function moveGenerator(state, selectedSquare) {
   const from = indexOf(selectedSquare);
-  if (from < 0) return [];
+  if (from < 0) {return [];}
   const board = boardOf(state);
   const piece = pieceAt(board, from);
-  if (!piece || piece.color !== state.currentTurn) return [];
+  if (!piece || piece.color !== state.currentTurn) {return [];}
   const enemy = piece.color === 'w' ? 'b' : 'w';
   return candidates(state, board, from, piece).filter(to => {
     const next = boardAfterMove(state, board, from, to, piece);

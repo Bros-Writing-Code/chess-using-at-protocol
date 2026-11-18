@@ -215,7 +215,7 @@ export function GameStatetoFEN(state) {
         : piece.type;
     }
 
-    if (emptyCount > 0) rank += emptyCount;
+    if (emptyCount > 0) {rank += emptyCount;}
     ranks.push(rank);
   }
 
@@ -234,11 +234,11 @@ export function GameStatetoFEN(state) {
   }
 
   let castling = '';
-  if (rights.wKingside) castling += 'K';
-  if (rights.wQueenside) castling += 'Q';
-  if (rights.bKingside) castling += 'k';
-  if (rights.bQueenside) castling += 'q';
-  if (!castling) castling = '-';
+  if (rights.wKingside) {castling += 'K';}
+  if (rights.wQueenside) {castling += 'Q';}
+  if (rights.bKingside) {castling += 'k';}
+  if (rights.bQueenside) {castling += 'q';}
+  if (!castling) {castling = '-';}
 
   let ep = '-';
   if (state.enPassantTarget !== null) {

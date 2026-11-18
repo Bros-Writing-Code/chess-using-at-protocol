@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { sqIndex } from '../0x88helper.js';
 import { applyMove, getGameStatus, isInCheck } from '../gameState.js';
 import { FENtoGameState, GameStatetoFEN } from '../notation.js';
-import { sqIndex } from '../0x88helper.js';
 
 describe('isInCheck', () => {
   it('returns false in the starting position', () => {
@@ -80,7 +80,7 @@ const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 function play(state, uci) {
   const result = applyMove(state, uci);
   expect(result).toMatchObject({ ok: true });
-  if (!result.ok) throw new Error(result.error);
+  if (!result.ok) {throw new Error(result.error);}
   return result.value;
 }
 
@@ -193,7 +193,7 @@ describe('applyMove', () => {
 
   it('fills in checkmate status and rejects moves after the game ends', () => {
     let state = FENtoGameState(START);
-    for (const uci of ['f2f3', 'e7e5', 'g2g4', 'd8h4']) state = play(state, uci);
+    for (const uci of ['f2f3', 'e7e5', 'g2g4', 'd8h4']) {state = play(state, uci);}
     expect(state).toMatchObject({ status: 'checkmate', winner: 'b', drawReason: null });
     expect(applyMove(state, 'e2e4').ok).toBe(false);
   });

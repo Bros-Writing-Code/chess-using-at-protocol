@@ -87,7 +87,7 @@ export function fromSquare(sq) {
  * @throws {Error} if `i` is off the board
  */
 export function toSquare(i) {
-  if (!onBoard(i)) throw new Error(`Index is off the board: ${i}`);
+  if (!onBoard(i)) {throw new Error(`Index is off the board: ${i}`);}
   return { row: rowOf(i), col: colOf(i) };
 }
 
@@ -110,7 +110,7 @@ export function isSquareName(name) {
  * @example sqIndex('h1') // 119
  */
 export function sqIndex(name) {
-  if (!isSquareName(name)) throw new Error(`Invalid square name: ${name}`);
+  if (!isSquareName(name)) {throw new Error(`Invalid square name: ${name}`);}
   const col = name.charCodeAt(0) - 97;      // 'a' = 97
   const row = 8 - (name.charCodeAt(1) - 48); // '8' → 0 … '1' → 7
   return toIndex(row, col);
@@ -124,7 +124,7 @@ export function sqIndex(name) {
  * @example sqName(68) // "e4"
  */
 export function sqName(i) {
-  if (!onBoard(i)) throw new Error(`Index is off the board: ${i}`);
+  if (!onBoard(i)) {throw new Error(`Index is off the board: ${i}`);}
   return String.fromCharCode(97 + colOf(i)) + (8 - rowOf(i));
 }
 
@@ -191,7 +191,7 @@ export function findSquares(board, test) {
 export function findKing(board, color) {
   for (const i of SQUARES) {
     const p = board[i];
-    if (p && p.type === 'k' && p.color === color) return i;
+    if (p && p.type === 'k' && p.color === color) {return i;}
   }
   return -1;
 }
@@ -226,7 +226,7 @@ export function cloneBoard(board) {
  * @returns {Board0x88}
  */
 export function withPiece(board, i, piece) {
-  if (!onBoard(i)) throw new Error(`Index is off the board: ${i}`);
+  if (!onBoard(i)) {throw new Error(`Index is off the board: ${i}`);}
   const next = cloneBoard(board);
   next[i] = piece;
   return next;
@@ -259,6 +259,6 @@ export function printBoard(board, log = true) {
   }
   lines.push('  a b c d e f g h');
   const text = lines.join('\n');
-  if (log) console.log(text);
+  if (log) {console.log(text);}
   return text;
 }

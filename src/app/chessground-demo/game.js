@@ -54,10 +54,10 @@ export function createGame(startFen) {
 
   /** @returns {DrawReason | null} */
   function findDrawReason() {
-    if (chess.isStalemate()) return 'stalemate';
-    if (chess.isInsufficientMaterial()) return 'insufficient-material';
-    if (chess.isThreefoldRepetition()) return 'threefold-repetition';
-    if (chess.isDrawByFiftyMoves()) return 'fifty-move-rule';
+    if (chess.isStalemate()) {return 'stalemate';}
+    if (chess.isInsufficientMaterial()) {return 'insufficient-material';}
+    if (chess.isThreefoldRepetition()) {return 'threefold-repetition';}
+    if (chess.isDrawByFiftyMoves()) {return 'fifty-move-rule';}
     return null;
   }
 
@@ -80,7 +80,7 @@ export function createGame(startFen) {
       const targets = new Map();
       for (const { from, to } of chess.moves({ verbose: true })) {
         const tos = targets.get(from) ?? [];
-        if (!tos.includes(to)) tos.push(to);
+        if (!tos.includes(to)) {tos.push(to);}
         targets.set(from, tos);
       }
       return targets;

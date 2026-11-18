@@ -7,9 +7,9 @@
  */
 
 import { SQUARES, toIndex, toSquare } from './0x88helper.js';
-import { FENtoGameState, moveToUCI } from './notation.js';
-import { moveGenerator } from './moveGeneration.js';
 import { applyMove, getGameStatus } from './gameState.js';
+import { moveGenerator } from './moveGeneration.js';
+import { FENtoGameState, moveToUCI } from './notation.js';
 
 /** @typedef {import('./types.js').GameState} GameState */
 /** @typedef {import('./types.js').Piece} Piece */
@@ -100,7 +100,7 @@ export function toGrid(state) {
  * @example legalMovesFrom(createGame(), { row: 6, col: 4 }) // e2 → e3, e4
  */
 export function legalMovesFrom(state, square) {
-  if (state.status !== 'active') return [];
+  if (state.status !== 'active') {return [];}
   return moveGenerator(state, square);
 }
 
@@ -114,20 +114,20 @@ export function legalMovesFrom(state, square) {
  * @example legalMoves(createGame()).length // 20
  */
 export function legalMoves(state) {
-  if (state.status !== 'active') return [];
+  if (state.status !== 'active') {return [];}
 
   /** @type {string[]} */
   const moves = [];
   for (const index of SQUARES) {
     const piece = state.board[index];
-    if (!piece || piece.color !== state.currentTurn) continue;
+    if (!piece || piece.color !== state.currentTurn) {continue;}
 
     const from = toSquare(index);
     const lastRow = piece.color === 'w' ? 0 : 7;
     for (const to of moveGenerator(state, from)) {
       const uci = moveToUCI({ from, to });
       if (piece.type === 'p' && to.row === lastRow) {
-        for (const promotion of ['q', 'r', 'b', 'n']) moves.push(uci + promotion);
+        for (const promotion of ['q', 'r', 'b', 'n']) {moves.push(uci + promotion);}
       } else {
         moves.push(uci);
       }

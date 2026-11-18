@@ -29,7 +29,7 @@ function play(state, ...ucis) {
 function deepFreeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.freeze(value);
-    for (const key of Object.keys(value)) deepFreeze(value[key]);
+    for (const key of Object.keys(value)) {deepFreeze(value[key]);}
   }
   return value;
 }
@@ -198,7 +198,7 @@ describe('legalMoves', () => {
 
   it('agrees with isValidMove', () => {
     const state = createGame();
-    for (const uci of legalMoves(state)) expect(isValidMove(state, uci), uci).toBe(true);
+    for (const uci of legalMoves(state)) {expect(isValidMove(state, uci), uci).toBe(true);}
   });
 
   it('returns no moves once the game is over', () => {

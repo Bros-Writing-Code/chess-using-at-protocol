@@ -3,8 +3,8 @@ import {
   NORTH, SOUTH, EAST, WEST, SQUARES,
   findKing, fromSquare, onBoard, sqIndex, toSquare,
 } from './0x88helper.js';
-import { UCItoMove, GameStatetoFEN } from './notation.js';
 import { boardAfterMove, isAttacked, moveGenerator } from './moveGeneration.js';
+import { UCItoMove, GameStatetoFEN } from './notation.js';
 
 /** @typedef {import('./types.js').GameState} GameState */
 /** @typedef {import('./types.js').Color} Color */
@@ -30,7 +30,7 @@ export function isInCheck(state) {
   }
 
   const king = findKing(state.board, state.currentTurn);
-  if (king < 0) throw new Error('Current player has no king on the board');
+  if (king < 0) {throw new Error('Current player has no king on the board');}
 
   const opponent = state.currentTurn === 'w' ? 'b' : 'w';
   return isAttacked(state.board, king, opponent);
@@ -50,12 +50,12 @@ export function isInsufficientMaterial(state) {
   const minors = [];
   for (const index of SQUARES) {
     const piece = state.board[index];
-    if (!piece || piece.type === 'k') continue;
-    if (piece.type !== 'b' && piece.type !== 'n') return false; // pawn, rook, or queen
+    if (!piece || piece.type === 'k') {continue;}
+    if (piece.type !== 'b' && piece.type !== 'n') {return false;} // pawn, rook, or queen
     minors.push(index);
   }
 
-  if (minors.length <= 1) return true; // K vs K, or a single bishop or knight
+  if (minors.length <= 1) {return true;} // K vs K, or a single bishop or knight
 
   // More than one minor piece: a draw only if all are bishops on one square color.
   const squareColor = (index) => ((index >> 4) + (index & 7)) % 2;
@@ -74,13 +74,13 @@ export function isInsufficientMaterial(state) {
  */
 function isThreefoldRepetition(state) {
   const history = state.positionHistory;
-  if (!Array.isArray(history) || history.length < 5) return false;
+  if (!Array.isArray(history) || history.length < 5) {return false;}
 
   const current = history[history.length - 1];
   const earliest = Math.max(0, history.length - 1 - state.halfmoveClock);
   let count = 0;
   for (let i = history.length - 1; i >= earliest; i--) {
-    if (history[i] === current && ++count >= 3) return true;
+    if (history[i] === current && ++count >= 3) {return true;}
   }
   return false;
 }
@@ -133,11 +133,11 @@ export function getGameStatus(state) {
  */
 function clearRookRight(rights, square, color) {
   if (color === 'w') {
-    if (square === A1) rights.wQueenside = false;
-    if (square === H1) rights.wKingside = false;
+    if (square === A1) {rights.wQueenside = false;}
+    if (square === H1) {rights.wKingside = false;}
   } else {
-    if (square === A8) rights.bQueenside = false;
-    if (square === H8) rights.bKingside = false;
+    if (square === A8) {rights.bQueenside = false;}
+    if (square === H8) {rights.bKingside = false;}
   }
 }
 
@@ -159,7 +159,7 @@ function positionKey(state) {
       return pawn?.type === 'p' && pawn.color === state.currentTurn &&
         moveGenerator(state, toSquare(from)).some((to) => fromSquare(to) === target);
     });
-    if (!canCapture) fields[3] = '-';
+    if (!canCapture) {fields[3] = '-';}
   }
   return fields.slice(0, 4).join(' ');
 }
@@ -169,7 +169,7 @@ function validMoveState(state) {
   try {
     GameStatetoFEN(state);
     if (!Array.isArray(state.moveHistory) || !Array.isArray(state.positionHistory) ||
-        !state.moveHistory.every((move) => move?.from && move?.to)) return false;
+        !state.moveHistory.every((move) => move?.from && move?.to)) {return false;}
     const kings = SQUARES.filter((index) => state.board[index]?.type === 'k');
     return kings.length === 2 && state.board[kings[0]].color !== state.board[kings[1]].color;
   } catch {
@@ -193,7 +193,7 @@ export function applyMove(state, uci) {
     return { ok: false, error: 'Malformed UCI move' };
   }
 
-  if (!validMoveState(state)) return { ok: false, error: 'Invalid game state' };
+  if (!validMoveState(state)) {return { ok: false, error: 'Invalid game state' };}
 
   if (state.status !== 'active') {
     return { ok: false, error: 'The game is already over' };
@@ -202,7 +202,7 @@ export function applyMove(state, uci) {
   const from = fromSquare(move.from);
   const to = fromSquare(move.to);
   const piece = state.board[from];
-  if (!piece) return { ok: false, error: 'No piece on the starting square' };
+  if (!piece) {return { ok: false, error: 'No piece on the starting square' };}
   if (piece.color !== state.currentTurn) {
     return { ok: false, error: "It is not that piece's turn" };
   }
@@ -222,7 +222,7 @@ export function applyMove(state, uci) {
   // Give the new state its own piece objects as well as its own board array.
   const board = boardAfterMove(state, state.board, from, to, piece)
     .map((occupant) => occupant ? { ...occupant } : null);
-  if (promotes) board[to] = { color: piece.color, type: move.promotion };
+  if (promotes) {board[to] = { color: piece.color, type: move.promotion };}
 
   const castlingRights = { ...state.castlingRights };
   if (piece.type === 'k') {
@@ -234,8 +234,8 @@ export function applyMove(state, uci) {
       castlingRights.bQueenside = false;
     }
   }
-  if (piece.type === 'r') clearRookRight(castlingRights, from, piece.color);
-  if (captured?.type === 'r') clearRookRight(castlingRights, to, captured.color);
+  if (piece.type === 'r') {clearRookRight(castlingRights, from, piece.color);}
+  if (captured?.type === 'r') {clearRookRight(castlingRights, to, captured.color);}
 
   const twoSquarePawnMove = piece.type === 'p' && Math.abs(to - from) === 2 * Math.abs(NORTH);
   const enPassantTarget = twoSquarePawnMove

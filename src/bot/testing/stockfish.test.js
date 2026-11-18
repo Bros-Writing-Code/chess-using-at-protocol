@@ -1,9 +1,9 @@
 import { createRequire } from 'node:module';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { createStockfishBot, resolveLevel, LEVELS, ELO_RANGE, SKILL_RANGE } from '../stockfish.js';
 import { SQUARES, toSquare } from '../../engine/0x88helper.js';
 import { moveGenerator } from '../../engine/moveGeneration.js';
 import { FENtoGameState, moveToUCI } from '../../engine/notation.js';
+import { createStockfishBot, resolveLevel, LEVELS, ELO_RANGE, SKILL_RANGE } from '../stockfish.js';
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -21,9 +21,9 @@ function fakeTransport({ autoHandshake = true, answer } = {}) {
     terminated: false,
     send(command) {
       sent.push(command);
-      if (autoHandshake && command === 'uci') queueMicrotask(() => emit('uciok'));
-      if (autoHandshake && command === 'isready') queueMicrotask(() => emit('readyok'));
-      if (command.startsWith('go') && answer) queueMicrotask(() => answer(command, emit));
+      if (autoHandshake && command === 'uci') {queueMicrotask(() => emit('uciok'));}
+      if (autoHandshake && command === 'isready') {queueMicrotask(() => emit('readyok'));}
+      if (command.startsWith('go') && answer) {queueMicrotask(() => answer(command, emit));}
     },
     listen(callback) { onLine = callback; },
     onError(callback) { this.crash = callback; },
@@ -136,7 +136,7 @@ describe('Stockfish adapter (fake engine)', () => {
     const originalSend = io.send.bind(io);
     io.send = (command) => {
       originalSend(command);
-      if (command === 'stop') queueMicrotask(() => io.emit('bestmove g8f6'));
+      if (command === 'stop') {queueMicrotask(() => io.emit('bestmove g8f6'));}
     };
     const move = botWith(io).getBotMove(START, 'easy');
     await vi.advanceTimersByTimeAsync(LEVELS.easy.movetime + 3000);
@@ -236,7 +236,7 @@ function legalMoves(fen) {
   const moves = [];
   for (const index of SQUARES) {
     const piece = state.board[index];
-    if (!piece || piece.color !== state.currentTurn) continue;
+    if (!piece || piece.color !== state.currentTurn) {continue;}
     const from = toSquare(index);
     for (const to of moveGenerator(state, from)) {
       const uci = moveToUCI({ from, to });

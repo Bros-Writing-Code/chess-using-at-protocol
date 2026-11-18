@@ -19,9 +19,9 @@ describe('index conversions', () => {
   });
 
   it('round-trips all 64 square names', () => {
-    for (const f of 'abcdefgh') for (const r of '12345678') {
+    for (const f of 'abcdefgh') {for (const r of '12345678') {
       expect(sqName(sqIndex(f + r))).toBe(f + r);
-    }
+    }}
   });
 
   it('matches the Square {row, col} convention in types.js', () => {
@@ -47,7 +47,7 @@ describe('onBoard and directions', () => {
   it('exactly 64 of 128 cells are real squares', () => {
     expect(SQUARES).toHaveLength(64);
     let count = 0;
-    for (let i = 0; i < 128; i++) if (onBoard(i)) count++;
+    for (let i = 0; i < 128; i++) {if (onBoard(i)) {count++;}}
     expect(count).toBe(64);
   });
 

@@ -4,8 +4,8 @@ import '@lichess-org/chessground/assets/chessground.base.css';
 import '@lichess-org/chessground/assets/chessground.brown.css';
 import '@lichess-org/chessground/assets/chessground.cburnett.css';
 import './style.css';
-import { createGame } from './game.js';
 import { COLORS, createClock } from './clock.js';
+import { createGame } from './game.js';
 
 const INITIAL_SECONDS = 600;
 const TICK_MS = 100;
@@ -87,10 +87,10 @@ function renderClocks() {
 
 /** @returns {string} The status line text for the current situation. */
 function statusText() {
-  if (timeLoser) return `${COLOR_LABELS[OPPONENTS[timeLoser]]} wins on time.`;
+  if (timeLoser) {return `${COLOR_LABELS[OPPONENTS[timeLoser]]} wins on time.`;}
   const { status, winner, drawReason, inCheck } = game.status();
-  if (status === 'checkmate') return `Checkmate. ${COLOR_LABELS[winner]} wins.`;
-  if (drawReason) return DRAW_TEXTS[drawReason];
+  if (status === 'checkmate') {return `Checkmate. ${COLOR_LABELS[winner]} wins.`;}
+  if (drawReason) {return DRAW_TEXTS[drawReason];}
   const text = `${COLOR_LABELS[game.turn()]} to move`;
   return inCheck ? `${text}, in check` : text;
 }
@@ -151,7 +151,7 @@ function startNewGame() {
 
 setInterval(() => {
   renderClocks();
-  if (!gameOver && clock.flagged()) endOnTime();
+  if (!gameOver && clock.flagged()) {endOnTime();}
 }, TICK_MS);
 
 newGameButton.addEventListener('click', startNewGame);
