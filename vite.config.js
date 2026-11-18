@@ -2,13 +2,9 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
-// SITE_URL is the deployed URL, set by CI from the SITE_URL GitHub repo variable.
-// Only its path is used here, as Vite's base:
-//   https://bros-writing-code.github.io/chess-using-at-protocol/  ->  /chess-using-at-protocol/
-//   https://<custom-domain>/                                       ->  /
-// To move to a custom domain, don't edit this file. Change the repo variable,
-// set the domain in Settings -> Pages, and add the DNS record (see docs).
-// It's unset locally, so dev and local builds serve from '/'.
+// SITE_URL is the deployed URL, set by CI from the SITE_URL repo variable. Only its path
+// becomes Vite's base. Unset locally, so dev serves from '/'. A domain change needs no
+// edit here; see docs/deployment.md.
 const siteUrl = process.env.SITE_URL;
 
 export default defineConfig({
