@@ -1,23 +1,85 @@
 name: CI
 
-on:                           # events that start the workflow
-  pull_request:               # any PR, against any branch
+on:
+  pull_request:
   push:
-    branches: [main]          # also re-check main after each merge -> so that when two PRs are merged in quick succession, 
-                              # the second one is checked against the first one's changes
+    branches: [main] # re-check main after each merge, so PRs merged in quick succession are checked together
 
-permissions:                  # what the workflow is allowed to do
-  contents: read              # least privilege: this job only needs to read code
+permissions:
+  contents: read
 
-jobs:                         # the actual work
-  test:                       # this job name becomes the status check name ("test") -> aka the job ID
-    runs-on: ubuntu-latest    # the VM that GitHub provides to run the job on
+concurrency:
+  # PRs share a group per branch, so a new push cancels the outdated run.
+  # Pushes to main use the unique run_id, so every merge gets its own full run.
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5      # clone the repo onto the runner
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24             # same Node major as local dev
-          cache: npm                   # reuse downloaded packages between runs
-      - run: npm ci                    # clean install from package-lock.json
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
       - run: npm test
-      - run: npm run build             # optional, but catches broken builds before #6 deploys them
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          SITE_URL: ${{ vars.SITE_URL }} # repo variable; vite.config.js turns it into the base path (see docs/deployment.md)
+      - if: github.event_name == 'push' && github.ref == 'refs/heads/main' # PRs never produce a deployable artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: [lint, format, test, build] # deploy only if every check passed
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write # lets Pages verify the run comes from this repo
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    # Runs on main aren't grouped, so when two merges land close together the older build can
+    # deploy last. If the live site looks stale, re-run the newest CI run on main.
+    concurrency:
+      group: pages
+      cancel-in-progress: false # never cut off a deploy halfway
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
