@@ -18,3 +18,5 @@
 - Default to semantic HTML and accessibility. Performance targets: respond <100ms, 60fps, load <1s.
 - Work in small increments with tests; flag tech debt you take on. Code is writing: clear names, comments explain why.
 - Record significant architectural decisions as short ADRs (follow the existing ones) and keep docs in sync.
+- Prefer to let humans write docs, pr names and descriptions, and commit messages. Always ask for them to give it to you first.
+- Generally follow the [process document page](https://github.com/Bros-Writing-Code/knightsky/wiki/Process) from the wiki.
