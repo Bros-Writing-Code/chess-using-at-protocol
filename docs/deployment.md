@@ -1,17 +1,18 @@
 # Deployment
 
-The app is currently deployed on GitHub Pages at <https://bros-writing-code.github.io/chess-using-at-protocol/>.
+The app is currently deployed on GitHub Pages at <https://bros-writing-code.github.io/knightsky/>.
 
 ## How it works
 
 - For every PR the `CI` workflow (`.github/workflows/ci.yaml`) runs the tests and a build. PRs never deploy.
 - For every push to `main` (a merged PR), the same build is packed, and the `deploy` job publishes it.
 - `SITE_URL` is the only place the site's URL lives. It's a repo variable (Settings → Secrets and variables → Actions → Variables). `vite.config.js` turns its path into Vite's `base`. It's unset locally, so dev serves from `/`.
+- Renaming the repo moves the Pages URL with no redirect, so update `SITE_URL` (and this doc) to match.
 
 To check a production build locally:
 
 ```sh
-export SITE_URL=https://bros-writing-code.github.io/chess-using-at-protocol/
+export SITE_URL=https://bros-writing-code.github.io/knightsky/
 npm run build
 npx vite preview
 ```
