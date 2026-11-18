@@ -49,17 +49,18 @@ let game;
 let gameOver = false;
 /** @type {ColorName | null} */
 let timeLoser = null;
+/** @type {ColorName | null} */
+let resignedColor = null;
 /** @type {Key[] | undefined} */
 let lastMove;
 /** @type {"bot" | "pvp"} */
 let mode = "pvp";
-/** @type {null | typeof createStockfishBot} */
-let bot = null
+/** @type {ReturnType<typeof createStockfishBot> | null} */
+let bot = null;
 /** @type {"easy" | "medium" | "hard" | "max"} */
 let botLvl = "easy";
 /** @type {ColorName | "white" | "black"} */
 let humanColor = "white";
-let botThinking = false;
 /** @type {number} */
 let gameId = 0;
 
@@ -103,6 +104,7 @@ function renderClocks() {
 /** @returns {string} The status line text for the current situation. */
 function statusText() {
   if (timeLoser) return `${COLOR_LABELS[OPPONENTS[timeLoser]]} wins on time.`;
+  if (resignedColor) return `${COLOR_LABELS[OPPONENTS[resignedColor]]} wins by resignation.`;
   const { status, winner, drawReason, inCheck } = game.status();
   if (status === 'checkmate') return `Checkmate. ${COLOR_LABELS[winner]} wins.`;
   if (drawReason) return DRAW_TEXTS[drawReason];
@@ -135,14 +137,17 @@ function onMove(from, to) {
 }
 
 
-async function playBotMove(){
-  if (bot === null) {
-    bot = createStockfishBot();
+async function playBotMove() {
+  const thisGame = gameId;
+  bot ??= createStockfishBot();
+  try {
+    const uci = await bot.getBotMove(game.fen(), botLvl);
+    if (thisGame !== gameId || gameOver) return; // new game or game ended while thinking
+    play(uci.slice(0, 2), uci.slice(2, 4));
+  } catch (error) {
+    console.error(error);
+    statusElement.textContent = 'The bot failed to move. Start a new game.';
   }
-  const code = await bot.getBotMove(game.fen(), botLvl);
-  const from = code.substring(0, 2);
-  const to = code.substring(2, 4);
-  play(from, to);
 }
 
 /**
@@ -179,9 +184,6 @@ function whoCanMove(){
   if (mode === "pvp"){
     return game.turn();
   }
-  if (botThinking === true){
-    return undefined;
-  }
   if (game.turn() === humanColor){
     return humanColor;
   }
@@ -192,10 +194,10 @@ function whoCanMove(){
 function startNewGame() {
   game = createGame();
   gameId = gameId + 1;
-  botThinking = false;
   clock.reset();
   gameOver = false;
   timeLoser = null;
+  resignedColor = null;
   lastMove = undefined;
   ground.cancelMove();
   ground.set({ orientation: mode === "bot" ? humanColor : "white" });
@@ -209,7 +211,8 @@ function startNewGame() {
 
 function resignGame() {
   if (!gameOver) {
-    timeLoser = game.turn();
+    // In bot mode only the human can press Resign, even on the bot's turn.
+    resignedColor = mode === 'bot' ? humanColor : game.turn();
     endGame();
   }
 }
