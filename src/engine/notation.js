@@ -70,14 +70,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  */
 
-import {
-  sqIndex,
-  sqName,
-  fromSquare,
-  toSquare,
-  toIndex,
-  emptyBoard,
-} from './0x88helper.js';
+import { sqIndex, sqName, fromSquare, toSquare, toIndex, emptyBoard } from './0x88helper.js';
 
 /** @typedef {import('./types.js').Move} Move */
 /** @typedef {import('./types.js').GameState} GameState */
@@ -108,17 +101,20 @@ export function moveToUCI(move) {
   // Validate coordinates before conversion. fromSquare() itself
   // does not necessarily reject coordinates outside 0-7.
   for (const square of [move.from, move.to]) {
-    if (!square ||
-        !Number.isInteger(square.row) ||
-        !Number.isInteger(square.col) ||
-        square.row < 0 || square.row > 7 ||
-        square.col < 0 || square.col > 7) {
+    if (
+      !square ||
+      !Number.isInteger(square.row) ||
+      !Number.isInteger(square.col) ||
+      square.row < 0 ||
+      square.row > 7 ||
+      square.col < 0 ||
+      square.col > 7
+    ) {
       throw new Error('Invalid move coordinates.');
     }
   }
 
-  let uci = sqName(fromSquare(move.from)) +
-            sqName(fromSquare(move.to));
+  let uci = sqName(fromSquare(move.from)) + sqName(fromSquare(move.to));
 
   if (move.promotion !== undefined) {
     if (!['q', 'r', 'b', 'n'].includes(move.promotion)) {
@@ -150,8 +146,7 @@ export function moveToUCI(move) {
  * // }
  */
 export function UCItoMove(uci) {
-  if (typeof uci !== 'string' ||
-      !/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci)) {
+  if (typeof uci !== 'string' || !/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci)) {
     throw new Error(`Invalid UCI notation: ${uci}`);
   }
 
@@ -204,18 +199,20 @@ export function GameStatetoFEN(state) {
         emptyCount = 0;
       }
 
-      if (!piece ||
-          !['p', 'n', 'b', 'r', 'q', 'k'].includes(piece.type) ||
-          !['w', 'b'].includes(piece.color)) {
+      if (
+        !piece ||
+        !['p', 'n', 'b', 'r', 'q', 'k'].includes(piece.type) ||
+        !['w', 'b'].includes(piece.color)
+      ) {
         throw new Error('Invalid piece on board.');
       }
 
-      rank += piece.color === 'w'
-        ? piece.type.toUpperCase()
-        : piece.type;
+      rank += piece.color === 'w' ? piece.type.toUpperCase() : piece.type;
     }
 
-    if (emptyCount > 0) {rank += emptyCount;}
+    if (emptyCount > 0) {
+      rank += emptyCount;
+    }
     ranks.push(rank);
   }
 
@@ -225,20 +222,32 @@ export function GameStatetoFEN(state) {
 
   const rights = state.castlingRights;
 
-  if (!rights ||
-      typeof rights.wKingside !== 'boolean' ||
-      typeof rights.wQueenside !== 'boolean' ||
-      typeof rights.bKingside !== 'boolean' ||
-      typeof rights.bQueenside !== 'boolean') {
+  if (
+    !rights ||
+    typeof rights.wKingside !== 'boolean' ||
+    typeof rights.wQueenside !== 'boolean' ||
+    typeof rights.bKingside !== 'boolean' ||
+    typeof rights.bQueenside !== 'boolean'
+  ) {
     throw new Error('Invalid castling rights.');
   }
 
   let castling = '';
-  if (rights.wKingside) {castling += 'K';}
-  if (rights.wQueenside) {castling += 'Q';}
-  if (rights.bKingside) {castling += 'k';}
-  if (rights.bQueenside) {castling += 'q';}
-  if (!castling) {castling = '-';}
+  if (rights.wKingside) {
+    castling += 'K';
+  }
+  if (rights.wQueenside) {
+    castling += 'Q';
+  }
+  if (rights.bKingside) {
+    castling += 'k';
+  }
+  if (rights.bQueenside) {
+    castling += 'q';
+  }
+  if (!castling) {
+    castling = '-';
+  }
 
   let ep = '-';
   if (state.enPassantTarget !== null) {
@@ -250,10 +259,12 @@ export function GameStatetoFEN(state) {
     }
   }
 
-  if (!Number.isSafeInteger(state.halfmoveClock) ||
-      state.halfmoveClock < 0 ||
-      !Number.isSafeInteger(state.fullmoveNumber) ||
-      state.fullmoveNumber < 1) {
+  if (
+    !Number.isSafeInteger(state.halfmoveClock) ||
+    state.halfmoveClock < 0 ||
+    !Number.isSafeInteger(state.fullmoveNumber) ||
+    state.fullmoveNumber < 1
+  ) {
     throw new Error('Invalid move counters.');
   }
 
@@ -370,9 +381,11 @@ export function FENtoGameState(fen) {
   const halfmoveClock = Number(halfmove);
   const fullmoveNumber = Number(fullmove);
 
-  if (!Number.isSafeInteger(halfmoveClock) ||
-      !Number.isSafeInteger(fullmoveNumber) ||
-      fullmoveNumber < 1) {
+  if (
+    !Number.isSafeInteger(halfmoveClock) ||
+    !Number.isSafeInteger(fullmoveNumber) ||
+    fullmoveNumber < 1
+  ) {
     throw new Error('Invalid move counters.');
   }
 

@@ -53,20 +53,30 @@ export default defineConfig([
     files: ['src/engine/**/*.js'],
     rules: {
       // Matches resolved paths, so any ../ depth and import() are caught.
-      'import-x/no-restricted-paths': ['error', {
-        zones: [{
-          target: './src/engine',
-          from: ['./src/app', './src/atproto'],
-          message: 'Engine code must not import from the UI or ATProto layers.',
-        }],
-      }],
+      'import-x/no-restricted-paths': [
+        'error',
+        {
+          zones: [
+            {
+              target: './src/engine',
+              from: ['./src/app', './src/atproto'],
+              message: 'Engine code must not import from the UI or ATProto layers.',
+            },
+          ],
+        },
+      ],
       // Their libraries too, so the folder rule can't be bypassed.
-      'no-restricted-imports': ['error', {
-        patterns: [{
-          group: ['@atproto/*', '@lichess-org/chessground', '@lichess-org/chessground/*'],
-          message: 'Engine code must not import UI or ATProto libraries.',
-        }],
-      }],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@atproto/*', '@lichess-org/chessground', '@lichess-org/chessground/*'],
+              message: 'Engine code must not import UI or ATProto libraries.',
+            },
+          ],
+        },
+      ],
     },
   },
   {

@@ -20,8 +20,7 @@ import { FENtoGameState, moveToUCI } from './notation.js';
  */
 
 /** FEN of the standard starting position. */
-export const START_FEN =
-  'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+export const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 /**
  * Creates a new game. Returns a fresh object on every call, so two games
@@ -45,9 +44,15 @@ export function createGame(fen = START_FEN) {
  */
 function isValidSquare(square) {
   const s = /** @type {any} */ (square);
-  return !!s &&
-    Number.isInteger(s.row) && s.row >= 0 && s.row <= 7 &&
-    Number.isInteger(s.col) && s.col >= 0 && s.col <= 7;
+  return (
+    !!s &&
+    Number.isInteger(s.row) &&
+    s.row >= 0 &&
+    s.row <= 7 &&
+    Number.isInteger(s.col) &&
+    s.col >= 0 &&
+    s.col <= 7
+  );
 }
 
 /**
@@ -100,7 +105,9 @@ export function toGrid(state) {
  * @example legalMovesFrom(createGame(), { row: 6, col: 4 }) // e2 → e3, e4
  */
 export function legalMovesFrom(state, square) {
-  if (state.status !== 'active') {return [];}
+  if (state.status !== 'active') {
+    return [];
+  }
   return moveGenerator(state, square);
 }
 
@@ -114,20 +121,26 @@ export function legalMovesFrom(state, square) {
  * @example legalMoves(createGame()).length // 20
  */
 export function legalMoves(state) {
-  if (state.status !== 'active') {return [];}
+  if (state.status !== 'active') {
+    return [];
+  }
 
   /** @type {string[]} */
   const moves = [];
   for (const index of SQUARES) {
     const piece = state.board[index];
-    if (!piece || piece.color !== state.currentTurn) {continue;}
+    if (!piece || piece.color !== state.currentTurn) {
+      continue;
+    }
 
     const from = toSquare(index);
     const lastRow = piece.color === 'w' ? 0 : 7;
     for (const to of moveGenerator(state, from)) {
       const uci = moveToUCI({ from, to });
       if (piece.type === 'p' && to.row === lastRow) {
-        for (const promotion of ['q', 'r', 'b', 'n']) {moves.push(uci + promotion);}
+        for (const promotion of ['q', 'r', 'b', 'n']) {
+          moves.push(uci + promotion);
+        }
       } else {
         moves.push(uci);
       }

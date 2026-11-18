@@ -29,7 +29,9 @@ function play(state, ...ucis) {
 function deepFreeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.freeze(value);
-    for (const key of Object.keys(value)) {deepFreeze(value[key]);}
+    for (const key of Object.keys(value)) {
+      deepFreeze(value[key]);
+    }
   }
   return value;
 }
@@ -42,10 +44,20 @@ const engine = { ...engineModule };
 describe('public API surface', () => {
   it('exports every function in the engine contract', () => {
     const expected = [
-      'createGame', 'getPiece', 'toGrid', 'replayMoves',
-      'legalMovesFrom', 'legalMoves', 'isValidMove', 'applyMove',
-      'isInCheck', 'getGameStatus',
-      'GameStatetoFEN', 'moveToUCI', 'UCItoMove', 'printBoard',
+      'createGame',
+      'getPiece',
+      'toGrid',
+      'replayMoves',
+      'legalMovesFrom',
+      'legalMoves',
+      'isValidMove',
+      'applyMove',
+      'isInCheck',
+      'getGameStatus',
+      'GameStatetoFEN',
+      'moveToUCI',
+      'UCItoMove',
+      'printBoard',
     ];
     for (const name of expected) {
       expect(typeof engine[name], name).toBe('function');
@@ -54,7 +66,15 @@ describe('public API surface', () => {
   });
 
   it('does not expose 0x88 internals', () => {
-    for (const name of ['toIndex', 'sqIndex', 'sqName', 'fromSquare', 'emptyBoard', 'isAttacked', 'boardAfterMove']) {
+    for (const name of [
+      'toIndex',
+      'sqIndex',
+      'sqName',
+      'fromSquare',
+      'emptyBoard',
+      'isAttacked',
+      'boardAfterMove',
+    ]) {
       expect(engine[name], name).toBeUndefined();
     }
   });
@@ -99,14 +119,22 @@ const STALEMATE = '7k/5Q2/6K1/8/8/8/8/8 b - - 0 1';
 
 describe('games that start from a finished position', () => {
   it('createGame reports checkmate for a mated FEN', () => {
-    expect(createGame(FOOLS_MATE)).toMatchObject({ status: 'checkmate', winner: 'b', drawReason: null });
+    expect(createGame(FOOLS_MATE)).toMatchObject({
+      status: 'checkmate',
+      winner: 'b',
+      drawReason: null,
+    });
   });
 
   it('createGame reports stalemate for a stalemated FEN', () => {
-    expect(createGame(STALEMATE)).toMatchObject({ status: 'stalemate', winner: null, drawReason: 'stalemate' });
+    expect(createGame(STALEMATE)).toMatchObject({
+      status: 'stalemate',
+      winner: null,
+      drawReason: 'stalemate',
+    });
   });
 
-  it('replayMoves with no moves reports the start position\'s result', () => {
+  it("replayMoves with no moves reports the start position's result", () => {
     expect(replayMoves([], FOOLS_MATE).value.status).toBe('checkmate');
   });
 
@@ -121,7 +149,7 @@ describe('getPiece and toGrid', () => {
   it('uses row 0 = rank 8 and col 0 = file a', () => {
     expect(getPiece(state, { row: 0, col: 0 })).toEqual({ color: 'b', type: 'r' }); // a8
     expect(getPiece(state, { row: 7, col: 4 })).toEqual({ color: 'w', type: 'k' }); // e1
-    expect(getPiece(state, { row: 4, col: 4 })).toBeNull();                         // e4
+    expect(getPiece(state, { row: 4, col: 4 })).toBeNull(); // e4
   });
 
   it('rejects squares outside the board', () => {
@@ -149,7 +177,7 @@ describe('getPiece and toGrid', () => {
 
   it('returns copies of pieces, so editing one does not change the state', () => {
     const fresh = createGame();
-    toGrid(fresh)[7][4].type = 'q';               // e1 king
+    toGrid(fresh)[7][4].type = 'q'; // e1 king
     getPiece(fresh, { row: 7, col: 3 }).color = 'b'; // d1 queen
     expect(getPiece(fresh, { row: 7, col: 4 })).toEqual({ color: 'w', type: 'k' });
     expect(getPiece(fresh, { row: 7, col: 3 })).toEqual({ color: 'w', type: 'q' });
@@ -168,10 +196,12 @@ describe('legalMovesFrom', () => {
 
   it('returns the two pawn pushes from e2 at the start', () => {
     const targets = legalMovesFrom(createGame(), { row: 6, col: 4 });
-    expect(targets).toEqual(expect.arrayContaining([
-      { row: 5, col: 4 }, // e3
-      { row: 4, col: 4 }, // e4
-    ]));
+    expect(targets).toEqual(
+      expect.arrayContaining([
+        { row: 5, col: 4 }, // e3
+        { row: 4, col: 4 }, // e4
+      ]),
+    );
     expect(targets).toHaveLength(2);
   });
 });
@@ -183,8 +213,10 @@ describe('legalMoves', () => {
     expect(moves).toEqual(expect.arrayContaining(['e2e4', 'g1f3', 'b1c3', 'a2a3']));
   });
 
-  it('lists Kiwipete\'s 48 moves, including both castles', () => {
-    const kiwipete = createGame('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1');
+  it("lists Kiwipete's 48 moves, including both castles", () => {
+    const kiwipete = createGame(
+      'r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1',
+    );
     const moves = legalMoves(kiwipete);
     expect(moves).toHaveLength(48);
     expect(moves).toEqual(expect.arrayContaining(['e1g1', 'e1c1']));
@@ -198,7 +230,9 @@ describe('legalMoves', () => {
 
   it('agrees with isValidMove', () => {
     const state = createGame();
-    for (const uci of legalMoves(state)) {expect(isValidMove(state, uci), uci).toBe(true);}
+    for (const uci of legalMoves(state)) {
+      expect(isValidMove(state, uci), uci).toBe(true);
+    }
   });
 
   it('returns no moves once the game is over', () => {
@@ -222,11 +256,12 @@ describe('applyMove and status through the public API', () => {
   it('plays a move and reports the new position', () => {
     const state = play(createGame(), 'e2e4');
     expect(state.currentTurn).toBe('b');
-    expect(GameStatetoFEN(state).split(' ').slice(0, 4).join(' '))
-      .toBe('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3');
+    expect(GameStatetoFEN(state).split(' ').slice(0, 4).join(' ')).toBe(
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3',
+    );
   });
 
-  it('reports check and checkmate after Fool\'s Mate', () => {
+  it("reports check and checkmate after Fool's Mate", () => {
     const state = play(createGame(), 'f2f3', 'e7e5', 'g2g4', 'd8h4');
     expect(isInCheck(state)).toBe(true);
     expect(getGameStatus(state)).toEqual({ status: 'checkmate', winner: 'b', drawReason: null });

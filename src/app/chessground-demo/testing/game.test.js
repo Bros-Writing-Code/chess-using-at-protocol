@@ -9,9 +9,7 @@ const FIFTY_MOVE_FEN = 'k7/8/8/8/8/8/8/K6R w - - 100 80';
 const PROMOTION_FEN = '8/P6k/8/8/8/8/8/K7 w - - 0 1';
 
 const FOOLS_MATE = ['f2f3', 'e7e5', 'g2g4', 'd8h4'];
-const KNIGHT_SHUFFLE = [
-  'g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1', 'f6g8',
-];
+const KNIGHT_SHUFFLE = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1', 'f6g8'];
 const CHECK_NOT_MATE = ['e2e4', 'e7e5', 'd1h5', 'b8c6', 'h5f7'];
 
 function playAll(game, moves) {

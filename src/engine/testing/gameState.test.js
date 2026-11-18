@@ -5,9 +5,7 @@ import { FENtoGameState, GameStatetoFEN } from '../notation.js';
 
 describe('isInCheck', () => {
   it('returns false in the starting position', () => {
-    const state = FENtoGameState(
-      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-    );
+    const state = FENtoGameState('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
 
     expect(isInCheck(state)).toBe(false);
   });
@@ -31,22 +29,22 @@ describe('isInCheck', () => {
 
 describe('getGameStatus', () => {
   it('returns active for the starting position', () => {
-    const state = FENtoGameState(
-      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-    );
+    const state = FENtoGameState('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
 
     expect(getGameStatus(state)).toEqual({
-      status: 'active', winner: null, drawReason: null,
+      status: 'active',
+      winner: null,
+      drawReason: null,
     });
   });
 
   it('detects Fool’s Mate and names Black as the winner', () => {
-    const state = FENtoGameState(
-      'rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3'
-    );
+    const state = FENtoGameState('rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3');
 
     expect(getGameStatus(state)).toEqual({
-      status: 'checkmate', winner: 'b', drawReason: null,
+      status: 'checkmate',
+      winner: 'b',
+      drawReason: null,
     });
   });
 
@@ -54,7 +52,9 @@ describe('getGameStatus', () => {
     const state = FENtoGameState('7k/6Q1/5K2/8/8/8/8/8 b - - 0 1');
 
     expect(getGameStatus(state)).toEqual({
-      status: 'checkmate', winner: 'w', drawReason: null,
+      status: 'checkmate',
+      winner: 'w',
+      drawReason: null,
     });
   });
 
@@ -62,7 +62,9 @@ describe('getGameStatus', () => {
     const state = FENtoGameState('k7/8/1QK5/8/8/8/8/8 b - - 0 1');
 
     expect(getGameStatus(state)).toEqual({
-      status: 'stalemate', winner: null, drawReason: 'stalemate',
+      status: 'stalemate',
+      winner: null,
+      drawReason: 'stalemate',
     });
   });
 
@@ -70,7 +72,9 @@ describe('getGameStatus', () => {
     const state = FENtoGameState('4r1k1/8/8/8/8/8/8/4K3 w - - 0 1');
 
     expect(getGameStatus(state)).toEqual({
-      status: 'active', winner: null, drawReason: null,
+      status: 'active',
+      winner: null,
+      drawReason: null,
     });
   });
 });
@@ -80,7 +84,9 @@ const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 function play(state, uci) {
   const result = applyMove(state, uci);
   expect(result).toMatchObject({ ok: true });
-  if (!result.ok) {throw new Error(result.error);}
+  if (!result.ok) {
+    throw new Error(result.error);
+  }
   return result.value;
 }
 
@@ -95,7 +101,7 @@ describe('applyMove', () => {
     expect(afterWhite.board).not.toBe(initial.board);
     expect(afterWhite.castlingRights).not.toBe(initial.castlingRights);
     expect(GameStatetoFEN(afterWhite)).toBe(
-      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1'
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
     );
     expect(afterWhite.moveHistory).toEqual([{ from: { row: 6, col: 4 }, to: { row: 4, col: 4 } }]);
     expect(afterWhite.positionHistory).toEqual([
@@ -193,7 +199,9 @@ describe('applyMove', () => {
 
   it('fills in checkmate status and rejects moves after the game ends', () => {
     let state = FENtoGameState(START);
-    for (const uci of ['f2f3', 'e7e5', 'g2g4', 'd8h4']) {state = play(state, uci);}
+    for (const uci of ['f2f3', 'e7e5', 'g2g4', 'd8h4']) {
+      state = play(state, uci);
+    }
     expect(state).toMatchObject({ status: 'checkmate', winner: 'b', drawReason: null });
     expect(applyMove(state, 'e2e4').ok).toBe(false);
   });

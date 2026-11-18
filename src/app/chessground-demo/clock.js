@@ -23,7 +23,9 @@ export function createClock({ initialSeconds, now }) {
 
   /** Charges the time since the last start to the running side. */
   function charge() {
-    if (running) {left[running] -= now() - startedAt;}
+    if (running) {
+      left[running] -= now() - startedAt;
+    }
   }
 
   /**
