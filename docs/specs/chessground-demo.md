@@ -22,7 +22,11 @@ It exists so #13 can compare chessground with our own board rendering, so it sta
 
 ## What the page looks like
 
+Player vs Player, playing White (`*` marks the selected button):
+
 ```
+[ * Player vs Player ] [ Bot Easy ] [ Bot Medium ] [ Bot Hard ] [ Bot Max ]
+[ * Play White ] [ Play Black ]
 White to move            <- status line
 
 Black   10:00
@@ -33,7 +37,25 @@ Black   10:00
 └─────────────────┘
 White   10:00
 
-[ New Game ]
+[ Start New Game ] [ Resign ]
+```
+
+Against the easy bot, playing Black. The board flips so Black is at the bottom:
+
+```
+[ Player vs Player ] [ * Bot Easy ] [ Bot Medium ] [ Bot Hard ] [ Bot Max ]
+[ Play White ] [ * Play Black ]
+White to move            <- status line
+
+White   10:00
+┌─────────────────┐
+│                 │
+│      board      │
+│                 │
+└─────────────────┘
+Black   10:00
+
+[ Start New Game ] [ Resign ]
 ```
 
 ## Who does what
@@ -45,7 +67,7 @@ Chessground only draws the board and handles clicks and drags. It doesn't know t
 | `index.html` | The page |
 | `style.css` | Board size and layout |
 | `main.js` | Connects the board, the game, the clock, and the page |
-| `game.js` | The adapter. Knows the rules by using chess.js, and is the only file that imports it |
+| `game.js` | The adapter. Knows the rules by using our own engine in `src/engine` |
 | `clock.js` | Tracks each side's time. Knows nothing about the page |
 | `testing/game.test.js`, `testing/clock.test.js` | Unit tests |
 

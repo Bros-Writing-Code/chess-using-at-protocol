@@ -6,6 +6,8 @@ import '@lichess-org/chessground/assets/chessground.cburnett.css';
 import './style.css';
 import { createGame } from './game.js';
 import { COLORS, createClock } from './clock.js';
+import { createStockfishBot } from '../../bot/stockfish.js';
+
 
 const INITIAL_SECONDS = 600;
 const TICK_MS = 100;
@@ -31,6 +33,7 @@ const DRAW_TEXTS = {
 const statusElement = document.getElementById('status');
 const boardElement = document.getElementById('board');
 const newGameButton = document.getElementById('new-game');
+const resignGameButton = document.getElementById('resign');
 /** @type {Record<ColorName, HTMLElement | null>} */
 const clockElements = {
   white: document.getElementById('white-clock'),
@@ -48,6 +51,18 @@ let gameOver = false;
 let timeLoser = null;
 /** @type {Key[] | undefined} */
 let lastMove;
+/** @type {"bot" | "pvp"} */
+let mode = "pvp";
+/** @type {null | typeof createStockfishBot} */
+let bot = null
+/** @type {"easy" | "medium" | "hard" | "max"} */
+let botLvl = "easy";
+/** @type {ColorName | "white" | "black"} */
+let humanColor = "white";
+let botThinking = false;
+/** @type {number} */
+let gameId = 0;
+
 
 const ground = Chessground(boardElement, {
   orientation: 'white',
@@ -64,7 +79,7 @@ function syncBoard() {
     turnColor: turn,
     check: game.status().inCheck,
     lastMove,
-    movable: { color: turn, dests },
+    movable: { color: whoCanMove(), dests },
   });
 }
 
@@ -116,6 +131,26 @@ function endOnTime() {
  * @param {Key} to
  */
 function onMove(from, to) {
+  play(from, to)
+}
+
+
+async function playBotMove(){
+  if (bot === null) {
+    bot = createStockfishBot();
+  }
+  const code = await bot.getBotMove(game.fen(), botLvl);
+  const from = code.substring(0, 2);
+  const to = code.substring(2, 4);
+  play(from, to);
+}
+
+/**
+ * @param {Key} from
+ * @param {Key} to
+ */
+function play(from, to){
+
   if (clock.flagged()) {
     syncBoard();
     endOnTime();
@@ -132,22 +167,87 @@ function onMove(from, to) {
   if (game.status().status === 'active') {
     clock.start(game.turn());
     renderStatus();
+    if (mode === "bot" && game.turn() !== humanColor) {
+      playBotMove();
+    }
   } else {
     endGame();
   }
 }
 
+function whoCanMove(){
+  if (mode === "pvp"){
+    return game.turn();
+  }
+  if (botThinking === true){
+    return undefined;
+  }
+  if (game.turn() === humanColor){
+    return humanColor;
+  }
+  return undefined;
+}
+
+
 function startNewGame() {
   game = createGame();
+  gameId = gameId + 1;
+  botThinking = false;
   clock.reset();
   gameOver = false;
   timeLoser = null;
   lastMove = undefined;
   ground.cancelMove();
+  ground.set({ orientation: mode === "bot" ? humanColor : "white" });
   syncBoard();
   renderStatus();
   renderClocks();
+  if (mode === "bot" && game.turn() !== humanColor) {
+    playBotMove();
+  }
 }
+
+function resignGame() {
+  if (!gameOver) {
+    timeLoser = game.turn();
+    endGame();
+  }
+}
+
+const modeOptions = document.getElementById('mode-options');
+
+modeOptions?.addEventListener('click', (event) => {
+  const button = event.target.closest('button');
+  if (!button) return;
+
+  mode =  button.dataset.mode;
+
+  if (button.dataset.level){
+    botLvl = button.dataset.level;
+  }
+
+  for (const other of modeOptions.querySelectorAll('button')){
+    other.setAttribute('aria-pressed', String(other === button));
+  }
+  startNewGame();
+});
+
+const HumanOptions = document.getElementById('color-options');
+
+HumanOptions?.addEventListener('click', (event) => {
+  const button = event.target.closest('button');
+  if (!button) return;
+
+  humanColor = button.dataset.color;
+
+  for (const other of HumanOptions.querySelectorAll('button')){
+    other.setAttribute('aria-pressed', String(other === button));
+  }
+  startNewGame();
+}); 
+
+
+resignGameButton.addEventListener('click', resignGame);
 
 setInterval(() => {
   renderClocks();
