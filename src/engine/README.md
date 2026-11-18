@@ -22,12 +22,13 @@ The six `getPossibleMoves...` functions do not filter out moves that leave the p
 
 ## gameState
 
-These three functions are exported from `gameState.js`.
+These functions are exported from `gameState.js`.
 
 | Function | Output | Purpose |
 | --- | --- | --- |
 | `isInCheck(state)` | `boolean` | Returns whether the side to move's king is attacked. |
-| `getGameStatus(state)` | `{ status, winner, drawReason }` | Returns `active`, `checkmate`, or `stalemate` status for the current position. Other draw rules are handled separately. |
+| `getGameStatus(state)` | `{ status, winner, drawReason }` | Returns `checkmate`, `stalemate`, `draw` (insufficient material, fifty-move rule, threefold repetition), or `active` for the current position. Checkmate and stalemate take priority. |
+| `isInsufficientMaterial(state)` | `boolean` | True for K vs K, K+B vs K, K+N vs K, or kings plus bishops all on one square color. |
 | `applyMove(state, uci)` | `Result<GameState>`: `{ ok: true, value: newState }` or `{ ok: false, error: string }` | Validates and applies a UCI move without changing `state`; updates the board, turn, special-move fields, history, and game status. |
 
 ## Public API (`src/engine/index.js`)
