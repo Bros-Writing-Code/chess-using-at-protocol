@@ -1,3 +1,5 @@
+# ADR 0006: Deploy to GitHub Pages from main, with the site URL in one repo variable
+
 - **Status:** Proposed
 - **Date:** 2026-11-16
 - **Deciders:** CICD team
