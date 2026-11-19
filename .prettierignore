@@ -4,3 +4,5 @@ src/bot/assets/
 package-lock.json
 # Docs stay as written until we decide otherwise.
 *.md
+# Git worktrees of Delta agents inside a local checkout.
+.delta/
