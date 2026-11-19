@@ -26,8 +26,8 @@ const COLOR_NAMES = { w: 'white', b: 'black' };
 const DEFAULT_PROMOTION = 'q';
 
 /**
- * Creates a game that wraps a single chess.js instance.
- * The instance is kept so threefold repetition can see earlier positions.
+ * Creates a game that wraps the engine's game state.
+ * The state is kept so threefold repetition can see earlier positions.
  *
  * @param {string} [startFen] - Starting position. Defaults to the normal start.
  */
