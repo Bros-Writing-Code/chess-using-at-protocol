@@ -1,23 +1,52 @@
+# Tests and builds every PR. After each merge to main, also deploys the built site to GitHub Pages.
 name: CI
 
-on:                           # events that start the workflow
-  pull_request:               # any PR, against any branch
+on:
+  pull_request:
   push:
-    branches: [main]          # also re-check main after each merge -> so that when two PRs are merged in quick succession, 
-                              # the second one is checked against the first one's changes
+    # Re-check main after each merge, so when two PRs merge in quick succession,
+    # the second is checked against the first one's changes.
+    branches: [main]
 
-permissions:                  # what the workflow is allowed to do
-  contents: read              # least privilege: this job only needs to read code
+permissions:
+  contents: read # least privilege for every job; deploy adds only what it needs
 
-jobs:                         # the actual work
-  test:                       # this job name becomes the status check name ("test") -> aka the job ID
-    runs-on: ubuntu-latest    # the VM that GitHub provides to run the job on
+jobs:
+  test: # also the PR status check name, so renaming it affects branch protection
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5      # clone the repo onto the runner
+      - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 24             # same Node major as local dev
-          cache: npm                   # reuse downloaded packages between runs
-      - run: npm ci                    # clean install from package-lock.json
+          node-version: 24 # same Node major as local dev
+          cache: npm
+      - run: npm ci
       - run: npm test
-      - run: npm run build             # optional, but catches broken builds before #6 deploys them
+      - run: npm run build # dist/ is also exactly what gets deployed
+        env:
+          # From the SITE_URL repo variable (Settings -> Secrets and variables -> Actions).
+          # vite.config.js turns it into the base path. See docs/deployment.md.
+          SITE_URL: ${{ vars.SITE_URL }}
+      - uses: actions/upload-pages-artifact@v5
+        # Only on a push to main, so PR runs never produce anything deployable.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          path: dist
+
+  deploy:
+    needs: test
+    # Only after a merge to main, never from a PR.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions: # replaces the top-level permissions, for this job only
+      pages: write
+      id-token: write # lets Pages verify that this run really comes from this repo (OIDC)
+    environment:
+      name: github-pages # only main may deploy to it: a second guard besides the `if` above
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false # a new deploy waits for the running one instead of cutting it off halfway
+    steps:
+      - id: deployment # read by environment.url above
+        uses: actions/deploy-pages@v5
