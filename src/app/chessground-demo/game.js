@@ -1,5 +1,11 @@
 // @ts-check
-import { Chess } from 'chess.js';
+import {
+  createGame as createEngineGame,
+  applyMove,
+  legalMoves as engineLegalMoves,
+  isInCheck,
+  GameStatetoFEN,
+} from '../../engine/index.js';
 
 /** @typedef {import('../../engine/types.js').Result<string>} MoveResult */
 /** @typedef {import('../../engine/types.js').GameStatus} GameStatus */
@@ -20,45 +26,30 @@ const COLOR_NAMES = { w: 'white', b: 'black' };
 const DEFAULT_PROMOTION = 'q';
 
 /**
- * Creates a game that wraps a single chess.js instance.
- * The instance is kept so threefold repetition can see earlier positions.
+ * Creates a game that wraps the engine's game state.
+ * The state is kept so threefold repetition can see earlier positions.
  *
  * @param {string} [startFen] - Starting position. Defaults to the normal start.
  */
 export function createGame(startFen) {
-  const chess = new Chess(startFen);
+  let state = createEngineGame(startFen)
+
 
   /** @returns {ColorName} */
   function turn() {
-    return COLOR_NAMES[chess.turn()];
+    return COLOR_NAMES[state.currentTurn];
   }
 
   /**
    * @returns {Status} Whether the game is over, and why.
    */
   function status() {
-    const inCheck = chess.isCheck();
-    if (chess.isCheckmate()) {
-      const winner = turn() === 'white' ? 'black' : 'white';
-      return { status: 'checkmate', winner, drawReason: null, inCheck };
-    }
-    const drawReason = findDrawReason();
-    if (drawReason === 'stalemate') {
-      return { status: 'stalemate', winner: null, drawReason, inCheck };
-    }
-    if (drawReason) {
-      return { status: 'draw', winner: null, drawReason, inCheck };
-    }
-    return { status: 'active', winner: null, drawReason: null, inCheck };
-  }
-
-  /** @returns {DrawReason | null} */
-  function findDrawReason() {
-    if (chess.isStalemate()) return 'stalemate';
-    if (chess.isInsufficientMaterial()) return 'insufficient-material';
-    if (chess.isThreefoldRepetition()) return 'threefold-repetition';
-    if (chess.isDrawByFiftyMoves()) return 'fifty-move-rule';
-    return null;
+    return {
+      status: state.status,
+      winner: state.winner ? COLOR_NAMES[state.winner] : null,
+      drawReason: state.drawReason,
+      inCheck: isInCheck(state),
+    };
   }
 
   return {
@@ -66,25 +57,24 @@ export function createGame(startFen) {
      * @returns {string} The current position as a FEN string.
      */
     fen() {
-      return chess.fen();
+      return GameStatetoFEN(state);
     },
 
     turn,
 
-    /**
-     * @returns {Map<string, string[]>} Each square of the player to move,
-     *   mapped to the squares its piece can legally reach.
-     */
     legalMoves() {
       /** @type {Map<string, string[]>} */
       const targets = new Map();
-      for (const { from, to } of chess.moves({ verbose: true })) {
+      for (const uci of engineLegalMoves(state)) {
+        const from = uci.slice(0, 2);
+        const to = uci.slice(2, 4);
         const tos = targets.get(from) ?? [];
         if (!tos.includes(to)) tos.push(to);
         targets.set(from, tos);
       }
       return targets;
     },
+
 
     /**
      * Plays a move. A promotion with no piece letter becomes a queen.
@@ -94,16 +84,14 @@ export function createGame(startFen) {
      * @returns {MoveResult}
      */
     move(uci) {
-      try {
-        chess.move({
-          from: uci.slice(0, 2),
-          to: uci.slice(2, 4),
-          promotion: uci.slice(4) || DEFAULT_PROMOTION,
-        });
-      } catch (error) {
-        return { ok: false, error: error.message };
+      const withQueen = uci + DEFAULT_PROMOTION;
+      const toPlay = engineLegalMoves(state).includes(withQueen) ? withQueen : uci;
+      const result = applyMove(state, toPlay);
+      if (!result.ok) {
+        return {ok: false, error: result.error};
       }
-      return { ok: true, value: chess.fen() };
+      state = result.value;
+      return {ok: true, value: GameStatetoFEN(state)};
     },
 
     status,

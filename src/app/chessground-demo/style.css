@@ -9,3 +9,18 @@ main {
   width: min(90vw, 480px);
   height: min(90vw, 480px);
 }
+
+
+#mode-options,
+#color-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+#mode-options button[aria-pressed="true"],
+#color-options button[aria-pressed="true"] {
+  font-weight: bold;
+  outline: 2px solid currentColor;
+}

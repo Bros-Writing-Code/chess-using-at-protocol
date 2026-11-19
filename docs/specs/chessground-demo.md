@@ -7,22 +7,28 @@
 
 ## What we're building
 
-A small chess page built on [chessground](https://github.com/lichess-org/chessground). Two people share one browser and play a full game against a clock.
+A small chess page built on [chessground](https://github.com/lichess-org/chessground), using our own engine for the rules. Either two people share one browser, or one person plays our Stockfish bot. Both modes play a full game against a clock.
 
 It exists so #13 can compare chessground with our own board rendering, so it stays simple.
 
 | Included | Left out for now |
 | :--- | :--- |
-| Board with White at the bottom | Resign and draw buttons |
+| Board with your side at the bottom | Draw offers |
 | Legal moves highlighted, click or drag to move | Skins |
 | Only legal moves allowed | Move list |
 | Clock | Online play |
-| Status line | Choosing a promotion piece (the engine team owns this, so pawns become queens for now) |
-| New Game button | |
+| Status line | Choosing a promotion piece (pawns always become queens) |
+| Player vs Player, or the bot at four levels (Easy, Medium, Hard, Max) | |
+| Play White or Play Black against the bot | |
+| Start New Game and Resign buttons | |
 
 ## What the page looks like
 
+Player vs Player, playing White (`*` marks the selected button):
+
 ```
+[ * Player vs Player ] [ Bot Easy ] [ Bot Medium ] [ Bot Hard ] [ Bot Max ]
+[ * Play White ] [ Play Black ]
 White to move            <- status line
 
 Black   10:00
@@ -33,7 +39,25 @@ Black   10:00
 └─────────────────┘
 White   10:00
 
-[ New Game ]
+[ Start New Game ] [ Resign ]
+```
+
+Against the easy bot, playing Black. The board flips so Black is at the bottom:
+
+```
+[ Player vs Player ] [ * Bot Easy ] [ Bot Medium ] [ Bot Hard ] [ Bot Max ]
+[ Play White ] [ * Play Black ]
+White to move            <- status line
+
+White   10:00
+┌─────────────────┐
+│                 │
+│      board      │
+│                 │
+└─────────────────┘
+Black   10:00
+
+[ Start New Game ] [ Resign ]
 ```
 
 ## Who does what
@@ -45,11 +69,12 @@ Chessground only draws the board and handles clicks and drags. It doesn't know t
 | `index.html` | The page |
 | `style.css` | Board size and layout |
 | `main.js` | Connects the board, the game, the clock, and the page |
-| `game.js` | The adapter. Knows the rules by using chess.js, and is the only file that imports it |
+| `game.js` | The adapter. Knows the rules by using our own engine in `src/engine` |
 | `clock.js` | Tracks each side's time. Knows nothing about the page |
 | `testing/game.test.js`, `testing/clock.test.js` | Unit tests |
+| `src/bot/stockfish.js` | The bot. Runs Stockfish in a Web Worker and returns a move for a FEN and level. See `src/bot/README.md` |
 
-**Setup:** add `@lichess-org/chessground` and `chess.js`, plus `vite` as a dev dependency. Add `npm run dev` and `npm run build`, both pointing Vite at this folder. Don't add a Vite config at the repo root, because Vitest would read it and could stop finding the engine tests.
+**Setup:** `@lichess-org/chessground` is a dependency and `vite` is a dev dependency. `npm run dev` and `npm run build` use the `vite.config.js` at the repo root, which builds this folder (see [Deployment](../deployment.md)). That config also serves the Stockfish files from `src/bot/assets/` at `/stockfish/`.
 
 ## The adapter (`game.js`)
 
@@ -65,22 +90,22 @@ Chessground only draws the board and handles clicks and drags. It doesn't know t
 
 `status` and `drawReason` use the values already defined in `src/engine/types.js`. `winner` is `'white'`, `'black'`, or `null`.
 
-**Promotion:** `main.js` sends moves with no promotion letter, such as `a7b8`. chess.js refuses those, so `game.js` fills in a queen.
+**Promotion:** `main.js` sends moves with no promotion letter, such as `a7b8`. The engine needs one, so `game.js` fills in a queen. The bot's moves go through the same path, so the bot also always promotes to a queen.
 
-**The game stays in memory** inside the adapter, rather than being rebuilt from a FEN each time. Threefold repetition needs earlier positions, which a FEN doesn't contain.
+**The game stays in memory** inside the adapter, rather than being rebuilt from a FEN each time. Threefold repetition needs earlier positions, which a FEN doesn't contain, so the adapter keeps the engine's game state (including `positionHistory`).
 
-### Connecting the engine later
+### Which engine function backs each method
 
-Only `game.js` changes. The tests in `testing/game.test.js` then confirm the engine behaves the same way.
+`game.js` is the only file that imports `src/engine`.
 
-| Function | Today, with chess.js | Later, with the engine |
-| :--- | :--- | :--- |
-| `createGame(fen)` | `new Chess(fen)` | `FENtoGameState(fen)` |
-| `fen()` | `chess.fen()` | `GameStatetoFEN(state)` |
-| `turn()` | `chess.turn()` | `state.currentTurn` |
-| `legalMoves()` | `chess.moves({ verbose: true })` | `moveGenerator(state, square)` for each square |
-| `move(uci)` | `chess.move({ from, to, promotion })` | `UCItoMove(uci)`, then `applyMove` (**not built yet**) |
-| `status()` | `isCheckmate()`, `isDraw()`, and similar | `state.status`, `state.winner`, `state.drawReason`, and `isCheck` (**not built yet**) |
+| Function | Engine function |
+| :--- | :--- |
+| `createGame(fen)` | `createGame(fen)` |
+| `fen()` | `GameStatetoFEN(state)` |
+| `turn()` | `state.currentTurn` |
+| `legalMoves()` | `legalMoves(state)`, grouped by starting square |
+| `move(uci)` | `applyMove(state, uci)` |
+| `status()` | `state.status`, `state.winner`, `state.drawReason`, and `isInCheck(state)` |
 
 ## The clock (`clock.js`)
 
@@ -107,9 +132,9 @@ Only `game.js` changes. The tests in `testing/game.test.js` then confirm the eng
 
 ## What happens during a game
 
-**Page load:** create a game and a clock. The board shows the starting position, White is to move, and both clocks show 10:00 and aren't running.
+**Page load:** create a game and a clock in Player vs Player mode. The board shows the starting position, White is to move, and both clocks show 10:00 and aren't running.
 
-**When a player moves,** chessground moves the piece and calls `movable.events.after` in `main.js`, which does the following:
+**When a move is played,** by a person (through chessground's `movable.events.after`) or by the bot, `main.js` does the following:
 
 1. Checks the clock. If time had already run out, the timeout wins and the move is discarded.
 2. Plays the move with `game.move()`.
@@ -117,8 +142,15 @@ Only `game.js` changes. The tests in `testing/game.test.js` then confirm the eng
 4. Updates the turn, legal moves, last-move highlight, and check highlight.
 5. Stops the clock and freezes the board if `game.status()` says the game is over. Otherwise it starts the other side's clock.
 6. Updates the status line.
+7. In bot mode, if it's now the bot's turn, asks the bot for a move.
 
-**New Game:** create a new game, reset the clock, and reset the board and status line.
+**Bot mode:** the person can only move their own pieces. On the bot's turn, `main.js` sends the FEN and level to `getBotMove`. If a new game started or the game ended while the bot was thinking, the bot's answer is ignored. The bot's clock runs while it thinks.
+
+**Mode and color buttons:** choosing Player vs Player, a bot level, Play White, or Play Black starts a new game. Against the bot, the board turns so the person's side is at the bottom, and the bot moves first when the person plays Black. Player vs Player always has White at the bottom.
+
+**Start New Game:** create a new game, reset the clock, and reset the board and status line. Keeps the current mode and color.
+
+**Resign:** ends the game and the other side wins. In Player vs Player, the side to move resigns. Against the bot, the person resigns, even during the bot's turn.
 
 **Chessground setup**
 
@@ -139,6 +171,8 @@ Only `game.js` changes. The tests in `testing/game.test.js` then confirm the eng
 | Threefold repetition | `Draw by threefold repetition.` |
 | Fifty-move rule | `Draw by the fifty-move rule.` |
 | Insufficient material | `Draw by insufficient material.` |
+| Resigned | `Black wins by resignation.` |
+| Bot error | `The bot failed to move. Start a new game.` |
 
 ## Testing
 
@@ -164,8 +198,13 @@ The reasoning is in [ADR 0004](../adr/0004-chessground-demo-testing.md).
 - [ ] Timeout: set `INITIAL_SECONDS` to 5, play one move for White, and wait. The status says `White wins on time.` Change it back afterward.
 - [ ] Background tab: play one move, switch tabs for 30 seconds, and come back. About 30 seconds should be gone.
 - [ ] New Game resets the board, clocks, and status line, even after a game has ended.
+- [ ] Resign in Player vs Player: after `1. e4`, Resign says `White wins by resignation.` The board and clocks freeze.
+- [ ] Bot Easy, Play White: after each of your moves, the bot answers and its clock runs while it thinks.
+- [ ] Bot Easy, Play Black: the board turns with Black at the bottom and the bot plays White's first move. You can't move White's pieces.
+- [ ] Bot Max: start a game, then press Start New Game while the bot is thinking. The new board stays at the starting position.
+- [ ] Resign against the bot while it's thinking: the bot's side wins and the bot's answer doesn't appear on the board.
 
 ## Before deploying or comparing
 
-- **Deploying:** chessground is GPL-3.0-or-later and this repo is ISC. Don't deploy this version to GitHub Pages until #13 is decided.
-- **Comparing:** this demo includes chess.js and a clock, so #13 needs to compare like with like.
+- **Deploying:** the deploy job from [ADR 0006](../adr/0006-deploy-to-github-pages.md) now builds this demo. chessground and Stockfish are GPL-3.0 and this repo is ISC, so licensing still needs to be settled in #13.
+- **Comparing:** this demo includes our engine, the bot, and a clock, so #13 needs to compare like with like.

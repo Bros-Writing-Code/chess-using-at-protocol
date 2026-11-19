@@ -11,6 +11,9 @@ export default defineConfig({
   // The app being built. Change this when the demo is replaced (#13).
   root: 'src/app/chessground-demo',
   base: siteUrl ? new URL(siteUrl).pathname : '/',
+  // Serve the Stockfish files straight from src/bot/assets/ at /stockfish/...
+  // so they aren't duplicated. The path is relative to root.
+  publicDir: '../../bot/assets',
   build: {
     // Fixed output folder, so the deploy job never cares which app is built.
     outDir: fileURLToPath(new URL('./dist', import.meta.url)),

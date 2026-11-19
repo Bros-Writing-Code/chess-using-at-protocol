@@ -41,10 +41,12 @@ If Stockfish fails, crashes or hangs, the bot throws that Worker away and the ne
 
 ## Serving the files (for the app)
 
-The browser has to load the two Stockfish files from a URL. By default the adapter looks for `/stockfish/stockfish-19-lite-single.js` (under Vite's base path). Two options for the app:
+The browser has to load the two Stockfish files from a URL. By default the adapter looks for `/stockfish/stockfish-19-lite-single.js` (under Vite's base path). Vite only serves files under the app's root folder or its `public/` folder, and `src/bot/assets/` is outside both, so the app has to make the files reachable. Options:
 
-1. Copy `src/bot/assets/stockfish/` into the app's static folder (for the Chessground demo, `src/app/chessground-demo/public/stockfish/`), and call `createStockfishBot()` as above, or
+1. **Point Vite's `publicDir` at `src/bot/assets` (what the Chessground demo does).** The root `vite.config.js` sets `publicDir: '../../bot/assets'` (relative to the app's folder, which is Vite's `root`), so `assets/stockfish/` is served at `/stockfish/` and nothing is copied. Restart `npm run dev` after changing it.
 2. Serve them anywhere and pass the URL: `createStockfishBot({ createTransport: () => createWorkerTransport('/path/to/stockfish-19-lite-single.js') })`.
+
+**Didn't copy the files into the app's `public/` folder.** We tried this for the Chessground demo (`src/app/chessground-demo/public/stockfish/`) and it broke `npm run lint`: ESLint ignores `src/bot/assets/` (it is a minified third-party build) but not the copy, so it reported 81 errors such as `'global' is not defined` and `Unnecessary escape character` in `stockfish-19-lite-single.js`. A copy also puts a second 1.8 MB binary in the repo that can fall out of date when Stockfish is upgraded. If you do need a copy, add its path to `globalIgnores` in `eslint.config.js`.
 
 Keep the `.js` and `.wasm` files in the same folder; the `.js` loads the `.wasm` next to it.
 - The "lite single-threaded" build is used because it is small and needs no special server headers. The full builds are ~99 MB, and the multi-threaded ones require cross-origin isolation headers.
