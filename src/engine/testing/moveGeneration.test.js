@@ -5,10 +5,8 @@ import { moveGenerator } from '../moveGeneration.js';
 
 const W = (type) => ({ type, color: 'w' });
 const B = (type) => ({ type, color: 'b' });
-const withKings = (board) => withPiece(
-  withPiece(board, sqIndex('a1'), W('k')),
-  sqIndex('h8'), B('k')
-);
+const withKings = (board) =>
+  withPiece(withPiece(board, sqIndex('a1'), W('k')), sqIndex('h8'), B('k'));
 
 const createMockState = (board, enPassantTarget = null) => ({
   board,
@@ -18,12 +16,11 @@ const createMockState = (board, enPassantTarget = null) => ({
     wKingside: false,
     wQueenside: false,
     bKingside: false,
-    bQueenside: false
-  }
+    bQueenside: false,
+  },
 });
 
 describe('Chess Engine 0x88 Move Generation Suite', () => {
-
   it('calculates sliding rays accurately for an isolated Rook on an open board', () => {
     let board = emptyBoard();
     const d5Index = sqIndex('d5');
@@ -44,7 +41,7 @@ describe('Chess Engine 0x88 Move Generation Suite', () => {
 
     const state = createMockState(withKings(board));
     const legalTargets = moveGenerator(state, { row: 3, col: 3 });
-    const targetIndices = legalTargets.map(sq => toIndex(sq.row, sq.col));
+    const targetIndices = legalTargets.map((sq) => toIndex(sq.row, sq.col));
 
     expect(targetIndices).toContain(sqIndex('d3'));
     expect(targetIndices).not.toContain(sqIndex('d7'));
@@ -58,7 +55,7 @@ describe('Chess Engine 0x88 Move Generation Suite', () => {
 
     const state = createMockState(withKings(board));
     const legalTargets = moveGenerator(state, { row: 7, col: 1 });
-    const targetIndices = legalTargets.map(sq => toIndex(sq.row, sq.col));
+    const targetIndices = legalTargets.map((sq) => toIndex(sq.row, sq.col));
 
     expect(targetIndices).toContain(sqIndex('a3'));
     expect(targetIndices).toContain(sqIndex('c3'));
@@ -74,7 +71,7 @@ describe('Chess Engine 0x88 Move Generation Suite', () => {
 
     const state = createMockState(board, sqIndex('d6'));
     const legalTargets = moveGenerator(state, { row: 3, col: 4 }); // e5
-    const targetIndices = legalTargets.map(sq => toIndex(sq.row, sq.col));
+    const targetIndices = legalTargets.map((sq) => toIndex(sq.row, sq.col));
 
     expect(targetIndices).toContain(sqIndex('d6'));
   });
@@ -99,8 +96,9 @@ describe('Chess Engine 0x88 Move Generation Suite', () => {
     board = withPiece(board, sqIndex('a8'), B('k'));
 
     const state = createMockState(board, sqIndex('d6'));
-    const targetIndices = moveGenerator(state, { row: 3, col: 4 })
-      .map(sq => toIndex(sq.row, sq.col));
+    const targetIndices = moveGenerator(state, { row: 3, col: 4 }).map((sq) =>
+      toIndex(sq.row, sq.col),
+    );
 
     expect(targetIndices).toContain(sqIndex('e6'));
     expect(targetIndices).not.toContain(sqIndex('d6'));

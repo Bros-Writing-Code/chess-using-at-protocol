@@ -1,0 +1,9 @@
+# Commits git blame skips, so lines point to whoever last changed what they do.
+# GitHub reads this file automatically; locally, npm install sets blame.ignoreRevsFile.
+# Never rebase or squash these commits: that changes their hashes and this list goes stale.
+
+# style: reformat the codebase with Prettier
+528d00a4f515654038c483132bd6a1e6355dd5d4
+
+# style: apply lint autofixes and Prettier to code from #58 and #60
+07a19b2f2fd397690a2ad09ac8442b00b269712a

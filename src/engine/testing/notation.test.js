@@ -1,17 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { sqIndex, emptyBoard, withPiece } from '../0x88helper.js';
-import {
-  moveToUCI,
-  UCItoMove,
-  GameStatetoFEN,
-  FENtoGameState,
-} from '../notation.js';
+import { moveToUCI, UCItoMove, GameStatetoFEN, FENtoGameState } from '../notation.js';
 
 const W = (type) => ({ type, color: 'w' });
 const B = (type) => ({ type, color: 'b' });
 
-const START_FEN =
-  'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 const createMockState = (board = emptyBoard()) => ({
   board,
@@ -34,36 +28,46 @@ const createMockState = (board = emptyBoard()) => ({
 
 describe('UCI notation', () => {
   it('converts ordinary moves into UCI', () => {
-    expect(moveToUCI({
-      from: { row: 6, col: 4 },
-      to: { row: 4, col: 4 },
-    })).toBe('e2e4');
+    expect(
+      moveToUCI({
+        from: { row: 6, col: 4 },
+        to: { row: 4, col: 4 },
+      }),
+    ).toBe('e2e4');
 
-    expect(moveToUCI({
-      from: { row: 7, col: 6 },
-      to: { row: 5, col: 5 },
-    })).toBe('g1f3');
+    expect(
+      moveToUCI({
+        from: { row: 7, col: 6 },
+        to: { row: 5, col: 5 },
+      }),
+    ).toBe('g1f3');
   });
 
   it('converts castling moves into UCI', () => {
-    expect(moveToUCI({
-      from: { row: 7, col: 4 },
-      to: { row: 7, col: 6 },
-    })).toBe('e1g1');
+    expect(
+      moveToUCI({
+        from: { row: 7, col: 4 },
+        to: { row: 7, col: 6 },
+      }),
+    ).toBe('e1g1');
 
-    expect(moveToUCI({
-      from: { row: 0, col: 4 },
-      to: { row: 0, col: 2 },
-    })).toBe('e8c8');
+    expect(
+      moveToUCI({
+        from: { row: 0, col: 4 },
+        to: { row: 0, col: 2 },
+      }),
+    ).toBe('e8c8');
   });
 
   it('converts all four promotion types into UCI', () => {
     for (const promotion of ['q', 'r', 'b', 'n']) {
-      expect(moveToUCI({
-        from: { row: 1, col: 4 },
-        to: { row: 0, col: 4 },
-        promotion,
-      })).toBe(`e7e8${promotion}`);
+      expect(
+        moveToUCI({
+          from: { row: 1, col: 4 },
+          to: { row: 0, col: 4 },
+          promotion,
+        }),
+      ).toBe(`e7e8${promotion}`);
     }
   });
 
@@ -90,15 +94,7 @@ describe('UCI notation', () => {
   });
 
   it('round-trips UCI moves', () => {
-    const moves = [
-      'e2e4',
-      'g1f3',
-      'e1g1',
-      'e8c8',
-      'a7a8q',
-      'h2h1n',
-      'e5d6',
-    ];
+    const moves = ['e2e4', 'g1f3', 'e1g1', 'e8c8', 'a7a8q', 'h2h1n', 'e5d6'];
 
     for (const uci of moves) {
       expect(moveToUCI(UCItoMove(uci))).toBe(uci);
@@ -140,20 +136,24 @@ describe('UCI notation', () => {
     ];
 
     for (const from of invalidSquares) {
-      expect(() => moveToUCI({
-        from,
-        to: { row: 4, col: 4 },
-      })).toThrow();
+      expect(() =>
+        moveToUCI({
+          from,
+          to: { row: 4, col: 4 },
+        }),
+      ).toThrow();
     }
   });
 
   it('rejects invalid promotion pieces', () => {
     for (const promotion of ['k', 'p', 'Q', 'x']) {
-      expect(() => moveToUCI({
-        from: { row: 1, col: 4 },
-        to: { row: 0, col: 4 },
-        promotion,
-      })).toThrow();
+      expect(() =>
+        moveToUCI({
+          from: { row: 1, col: 4 },
+          to: { row: 0, col: 4 },
+          promotion,
+        }),
+      ).toThrow();
     }
   });
 });
@@ -162,9 +162,7 @@ describe('FEN serialization', () => {
   it('serializes an empty board', () => {
     const state = createMockState();
 
-    expect(GameStatetoFEN(state)).toBe(
-      '8/8/8/8/8/8/8/8 w - - 0 1'
-    );
+    expect(GameStatetoFEN(state)).toBe('8/8/8/8/8/8/8/8 w - - 0 1');
   });
 
   it('serializes pieces using the correct rank orientation', () => {
@@ -175,9 +173,7 @@ describe('FEN serialization', () => {
 
     const state = createMockState(board);
 
-    expect(GameStatetoFEN(state)).toBe(
-      '4k3/8/8/8/8/8/8/R3K3 w - - 0 1'
-    );
+    expect(GameStatetoFEN(state)).toBe('4k3/8/8/8/8/8/8/R3K3 w - - 0 1');
   });
 
   it('serializes castling rights in KQkq order', () => {
@@ -190,16 +186,12 @@ describe('FEN serialization', () => {
       bQueenside: true,
     };
 
-    expect(GameStatetoFEN(state)).toBe(
-      '8/8/8/8/8/8/8/8 w KQkq - 0 1'
-    );
+    expect(GameStatetoFEN(state)).toBe('8/8/8/8/8/8/8/8 w KQkq - 0 1');
 
     state.castlingRights.wQueenside = false;
     state.castlingRights.bKingside = false;
 
-    expect(GameStatetoFEN(state)).toBe(
-      '8/8/8/8/8/8/8/8 w Kq - 0 1'
-    );
+    expect(GameStatetoFEN(state)).toBe('8/8/8/8/8/8/8/8 w Kq - 0 1');
   });
 
   it('serializes en passant targets as algebraic squares', () => {
@@ -208,16 +200,12 @@ describe('FEN serialization', () => {
     state.currentTurn = 'b';
     state.enPassantTarget = sqIndex('e3');
 
-    expect(GameStatetoFEN(state)).toBe(
-      '8/8/8/8/8/8/8/8 b - e3 0 1'
-    );
+    expect(GameStatetoFEN(state)).toBe('8/8/8/8/8/8/8/8 b - e3 0 1');
 
     state.currentTurn = 'w';
     state.enPassantTarget = sqIndex('d6');
 
-    expect(GameStatetoFEN(state)).toBe(
-      '8/8/8/8/8/8/8/8 w - d6 0 1'
-    );
+    expect(GameStatetoFEN(state)).toBe('8/8/8/8/8/8/8/8 w - d6 0 1');
   });
 
   it('rejects en passant targets that conflict with the active player', () => {
@@ -242,7 +230,12 @@ describe('FEN serialization', () => {
   it('only produces en passant FENs that FENtoGameState accepts', () => {
     const state = createMockState();
 
-    for (const [turn, square] of [['w', 'a6'], ['w', 'h6'], ['b', 'a3'], ['b', 'h3']]) {
+    for (const [turn, square] of [
+      ['w', 'a6'],
+      ['w', 'h6'],
+      ['b', 'a3'],
+      ['b', 'h3'],
+    ]) {
       state.currentTurn = turn;
       state.enPassantTarget = sqIndex(square);
       const fen = GameStatetoFEN(state);
@@ -257,9 +250,7 @@ describe('FEN serialization', () => {
     state.halfmoveClock = 17;
     state.fullmoveNumber = 42;
 
-    expect(GameStatetoFEN(state)).toBe(
-      '8/8/8/8/8/8/8/8 b - - 17 42'
-    );
+    expect(GameStatetoFEN(state)).toBe('8/8/8/8/8/8/8/8 b - - 17 42');
   });
 
   it('rejects invalid board structures', () => {
@@ -334,17 +325,13 @@ describe('FEN parsing', () => {
   });
 
   it('parses en passant targets as 0x88 indices', () => {
-    const whiteToMove =
-      '4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 2';
+    const whiteToMove = '4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 2';
 
-    const blackToMove =
-      '4k3/8/8/8/3Pp3/8/8/4K3 b - d3 0 2';
+    const blackToMove = '4k3/8/8/8/3Pp3/8/8/4K3 b - d3 0 2';
 
-    expect(FENtoGameState(whiteToMove).enPassantTarget)
-      .toBe(sqIndex('d6'));
+    expect(FENtoGameState(whiteToMove).enPassantTarget).toBe(sqIndex('d6'));
 
-    expect(FENtoGameState(blackToMove).enPassantTarget)
-      .toBe(sqIndex('d3'));
+    expect(FENtoGameState(blackToMove).enPassantTarget).toBe(sqIndex('d3'));
   });
 
   it('rejects malformed FEN structure', () => {
@@ -371,8 +358,7 @@ describe('FEN parsing', () => {
 
 describe('FEN round trips', () => {
   it('round-trips the starting position', () => {
-    expect(GameStatetoFEN(FENtoGameState(START_FEN)))
-      .toBe(START_FEN);
+    expect(GameStatetoFEN(FENtoGameState(START_FEN))).toBe(START_FEN);
   });
 
   it('round-trips positions with different game metadata', () => {

@@ -4,10 +4,9 @@ import '@lichess-org/chessground/assets/chessground.base.css';
 import '@lichess-org/chessground/assets/chessground.brown.css';
 import '@lichess-org/chessground/assets/chessground.cburnett.css';
 import './style.css';
-import { createGame } from './game.js';
-import { COLORS, createClock } from './clock.js';
 import { createStockfishBot } from '../../bot/stockfish.js';
-
+import { COLORS, createClock } from './clock.js';
+import { createGame } from './game.js';
 
 const INITIAL_SECONDS = 600;
 const TICK_MS = 100;
@@ -54,16 +53,15 @@ let resignedColor = null;
 /** @type {Key[] | undefined} */
 let lastMove;
 /** @type {"bot" | "pvp"} */
-let mode = "pvp";
+let mode = 'pvp';
 /** @type {ReturnType<typeof createStockfishBot> | null} */
 let bot = null;
 /** @type {"easy" | "medium" | "hard" | "max"} */
-let botLvl = "easy";
+let botLvl = 'easy';
 /** @type {ColorName | "white" | "black"} */
-let humanColor = "white";
+let humanColor = 'white';
 /** @type {number} */
 let gameId = 0;
-
 
 const ground = Chessground(boardElement, {
   orientation: 'white',
@@ -103,11 +101,19 @@ function renderClocks() {
 
 /** @returns {string} The status line text for the current situation. */
 function statusText() {
-  if (timeLoser) return `${COLOR_LABELS[OPPONENTS[timeLoser]]} wins on time.`;
-  if (resignedColor) return `${COLOR_LABELS[OPPONENTS[resignedColor]]} wins by resignation.`;
+  if (timeLoser) {
+    return `${COLOR_LABELS[OPPONENTS[timeLoser]]} wins on time.`;
+  }
+  if (resignedColor) {
+    return `${COLOR_LABELS[OPPONENTS[resignedColor]]} wins by resignation.`;
+  }
   const { status, winner, drawReason, inCheck } = game.status();
-  if (status === 'checkmate') return `Checkmate. ${COLOR_LABELS[winner]} wins.`;
-  if (drawReason) return DRAW_TEXTS[drawReason];
+  if (status === 'checkmate') {
+    return `Checkmate. ${COLOR_LABELS[winner]} wins.`;
+  }
+  if (drawReason) {
+    return DRAW_TEXTS[drawReason];
+  }
   const text = `${COLOR_LABELS[game.turn()]} to move`;
   return inCheck ? `${text}, in check` : text;
 }
@@ -133,16 +139,17 @@ function endOnTime() {
  * @param {Key} to
  */
 function onMove(from, to) {
-  play(from, to)
+  play(from, to);
 }
-
 
 async function playBotMove() {
   const thisGame = gameId;
   bot ??= createStockfishBot();
   try {
     const uci = await bot.getBotMove(game.fen(), botLvl);
-    if (thisGame !== gameId || gameOver) return; // new game or game ended while thinking
+    if (thisGame !== gameId || gameOver) {
+      return;
+    } // new game or game ended while thinking
     play(uci.slice(0, 2), uci.slice(2, 4));
   } catch (error) {
     console.error(error);
@@ -154,8 +161,7 @@ async function playBotMove() {
  * @param {Key} from
  * @param {Key} to
  */
-function play(from, to){
-
+function play(from, to) {
   if (clock.flagged()) {
     syncBoard();
     endOnTime();
@@ -172,7 +178,7 @@ function play(from, to){
   if (game.status().status === 'active') {
     clock.start(game.turn());
     renderStatus();
-    if (mode === "bot" && game.turn() !== humanColor) {
+    if (mode === 'bot' && game.turn() !== humanColor) {
       playBotMove();
     }
   } else {
@@ -180,16 +186,15 @@ function play(from, to){
   }
 }
 
-function whoCanMove(){
-  if (mode === "pvp"){
+function whoCanMove() {
+  if (mode === 'pvp') {
     return game.turn();
   }
-  if (game.turn() === humanColor){
+  if (game.turn() === humanColor) {
     return humanColor;
   }
   return undefined;
 }
-
 
 function startNewGame() {
   game = createGame();
@@ -200,11 +205,11 @@ function startNewGame() {
   resignedColor = null;
   lastMove = undefined;
   ground.cancelMove();
-  ground.set({ orientation: mode === "bot" ? humanColor : "white" });
+  ground.set({ orientation: mode === 'bot' ? humanColor : 'white' });
   syncBoard();
   renderStatus();
   renderClocks();
-  if (mode === "bot" && game.turn() !== humanColor) {
+  if (mode === 'bot' && game.turn() !== humanColor) {
     playBotMove();
   }
 }
@@ -221,15 +226,17 @@ const modeOptions = document.getElementById('mode-options');
 
 modeOptions?.addEventListener('click', (event) => {
   const button = event.target.closest('button');
-  if (!button) return;
+  if (!button) {
+    return;
+  }
 
-  mode =  button.dataset.mode;
+  mode = button.dataset.mode;
 
-  if (button.dataset.level){
+  if (button.dataset.level) {
     botLvl = button.dataset.level;
   }
 
-  for (const other of modeOptions.querySelectorAll('button')){
+  for (const other of modeOptions.querySelectorAll('button')) {
     other.setAttribute('aria-pressed', String(other === button));
   }
   startNewGame();
@@ -239,22 +246,25 @@ const HumanOptions = document.getElementById('color-options');
 
 HumanOptions?.addEventListener('click', (event) => {
   const button = event.target.closest('button');
-  if (!button) return;
+  if (!button) {
+    return;
+  }
 
   humanColor = button.dataset.color;
 
-  for (const other of HumanOptions.querySelectorAll('button')){
+  for (const other of HumanOptions.querySelectorAll('button')) {
     other.setAttribute('aria-pressed', String(other === button));
   }
   startNewGame();
-}); 
-
+});
 
 resignGameButton.addEventListener('click', resignGame);
 
 setInterval(() => {
   renderClocks();
-  if (!gameOver && clock.flagged()) endOnTime();
+  if (!gameOver && clock.flagged()) {
+    endOnTime();
+  }
 }, TICK_MS);
 
 newGameButton.addEventListener('click', startNewGame);

@@ -1,52 +1,86 @@
-# Tests and builds every PR. After each merge to main, also deploys the built site to GitHub Pages.
 name: CI
 
 on:
   pull_request:
   push:
-    # Re-check main after each merge, so when two PRs merge in quick succession,
-    # the second is checked against the first one's changes.
-    branches: [main]
+    branches: [main] # re-check main after each merge, so PRs merged in quick succession are checked together
 
 permissions:
-  contents: read # least privilege for every job; deploy adds only what it needs
+  contents: read
 
+concurrency:
+  # PRs share a group per branch, so a new push cancels the outdated run.
+  # Pushes to main use the unique run_id, so every merge gets its own full run.
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+# Job names are the PR status check names, so renaming one breaks branch protection's required checks.
 jobs:
-  test: # also the PR status check name, so renaming it affects branch protection
+  lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24 # same Node major as local dev
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run build # dist/ is also exactly what gets deployed
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
         env:
-          # From the SITE_URL repo variable (Settings -> Secrets and variables -> Actions).
-          # vite.config.js turns it into the base path. See docs/deployment.md.
-          SITE_URL: ${{ vars.SITE_URL }}
-      - uses: actions/upload-pages-artifact@v5
-        # Only on a push to main, so PR runs never produce anything deployable.
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+          SITE_URL: ${{ vars.SITE_URL }} # repo variable; vite.config.js turns it into the base path (see docs/deployment.md)
+      - if: github.event_name == 'push' && github.ref == 'refs/heads/main' # PRs never produce a deployable artifact
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
   deploy:
-    needs: test
-    # Only after a merge to main, never from a PR.
+    needs: [lint, format, test, build] # deploy only if every check passed
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    permissions: # replaces the top-level permissions, for this job only
+    permissions:
       pages: write
-      id-token: write # lets Pages verify that this run really comes from this repo (OIDC)
+      id-token: write # lets Pages verify the run comes from this repo
     environment:
-      name: github-pages # only main may deploy to it: a second guard besides the `if` above
+      name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    # Runs on main aren't grouped, so when two merges land close together the older build can
+    # deploy last. If the live site looks stale, re-run the newest CI run on main.
     concurrency:
       group: pages
-      cancel-in-progress: false # a new deploy waits for the running one instead of cutting it off halfway
+      cancel-in-progress: false # never cut off a deploy halfway
     steps:
-      - id: deployment # read by environment.url above
+      - id: deployment
         uses: actions/deploy-pages@v5

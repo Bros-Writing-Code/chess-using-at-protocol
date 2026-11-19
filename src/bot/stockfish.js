@@ -56,26 +56,40 @@ export function resolveLevel(level) {
 
   if (typeof level === 'string') {
     const preset = LEVELS[/** @type {keyof typeof LEVELS} */ (level)];
-    if (!preset) return { error: `Unknown level: ${level}` };
+    if (!preset) {
+      return { error: `Unknown level: ${level}` };
+    }
     level = preset;
   }
-  if (!level || typeof level !== 'object') return { error: `Unknown level: ${String(level)}` };
+  if (!level || typeof level !== 'object') {
+    return { error: `Unknown level: ${String(level)}` };
+  }
 
   const { skill, elo, movetime = DEFAULT_MOVETIME } = /** @type {any} */ (level);
   if (!Number.isInteger(movetime) || movetime < 50 || movetime > 10_000) {
     return { error: `movetime must be 50-10000 ms, got ${movetime}` };
   }
   if (elo !== undefined) {
-    if (!inRange(elo, ELO_RANGE)) return { error: `elo must be ${ELO_RANGE.min}-${ELO_RANGE.max}, got ${elo}` };
+    if (!inRange(elo, ELO_RANGE)) {
+      return { error: `elo must be ${ELO_RANGE.min}-${ELO_RANGE.max}, got ${elo}` };
+    }
     return {
       movetime,
-      options: ['setoption name UCI_LimitStrength value true', `setoption name UCI_Elo value ${elo}`],
+      options: [
+        'setoption name UCI_LimitStrength value true',
+        `setoption name UCI_Elo value ${elo}`,
+      ],
     };
   }
-  if (!inRange(skill, SKILL_RANGE)) return { error: `skill must be ${SKILL_RANGE.min}-${SKILL_RANGE.max}, got ${skill}` };
+  if (!inRange(skill, SKILL_RANGE)) {
+    return { error: `skill must be ${SKILL_RANGE.min}-${SKILL_RANGE.max}, got ${skill}` };
+  }
   return {
     movetime,
-    options: ['setoption name UCI_LimitStrength value false', `setoption name Skill Level value ${skill}`],
+    options: [
+      'setoption name UCI_LimitStrength value false',
+      `setoption name Skill Level value ${skill}`,
+    ],
   };
 }
 
@@ -130,7 +144,8 @@ export function createWorkerTransport(url = defaultWorkerUrl()) {
         event.preventDefault?.();
         onError(new Error(`Stockfish worker error: ${event.message || 'failed to load'}`));
       };
-      worker.onmessageerror = () => onError(new Error('Stockfish worker sent an unreadable message'));
+      worker.onmessageerror = () =>
+        onError(new Error('Stockfish worker sent an unreadable message'));
     },
     terminate: () => worker.terminate(),
   };
@@ -193,14 +208,18 @@ export function createStockfishBot({ createTransport = () => createWorkerTranspo
     let waiter = () => false;
     const promise = new Promise((resolve) => {
       waiter = (line) => {
-        if (!match(line)) return false;
+        if (!match(line)) {
+          return false;
+        }
         resolve(line);
         return true;
       };
       target.waiters.push(waiter);
     });
     return Object.assign(promise, {
-      cancel: () => { target.waiters = target.waiters.filter((w) => w !== waiter); },
+      cancel: () => {
+        target.waiters = target.waiters.filter((w) => w !== waiter);
+      },
     });
   }
 
@@ -213,7 +232,9 @@ export function createStockfishBot({ createTransport = () => createWorkerTranspo
     const fresh = {
       io,
       waiters: [],
-      crashed: new Promise((_, reject) => { fail = reject; }),
+      crashed: new Promise((_, reject) => {
+        fail = reject;
+      }),
       ready: Promise.resolve(),
     };
     fresh.crashed.catch(() => {}); // only observed while a request is running
@@ -221,7 +242,9 @@ export function createStockfishBot({ createTransport = () => createWorkerTranspo
     io.listen((line) => {
       // Hand each line to the first waiter that wants it.
       const index = fresh.waiters.findIndex((wants) => wants(line));
-      if (index !== -1) fresh.waiters.splice(index, 1);
+      if (index !== -1) {
+        fresh.waiters.splice(index, 1);
+      }
     });
     io.onError?.((error) => fail(error));
 
@@ -242,7 +265,9 @@ export function createStockfishBot({ createTransport = () => createWorkerTranspo
 
   /** Throws away the current Stockfish; the next request starts a new one. */
   function discard() {
-    if (!engine) return;
+    if (!engine) {
+      return;
+    }
     engine.waiters = [];
     engine.io.terminate();
     engine = null;
@@ -278,8 +303,12 @@ export function createStockfishBot({ createTransport = () => createWorkerTranspo
     try {
       const line = await Promise.race([answer, timedOut, current.crashed]);
       const move = /** @type {RegExpMatchArray} */ (line.match(BESTMOVE))[1];
-      if (move === '(none)') throw new Error('Stockfish has no legal move (game over)');
-      if (!UCI_MOVE.test(move)) throw new Error(`Unexpected Stockfish move: ${move}`);
+      if (move === '(none)') {
+        throw new Error('Stockfish has no legal move (game over)');
+      }
+      if (!UCI_MOVE.test(move)) {
+        throw new Error(`Unexpected Stockfish move: ${move}`);
+      }
       return move;
     } finally {
       clearTimeout(stopTimer);
@@ -296,8 +325,12 @@ export function createStockfishBot({ createTransport = () => createWorkerTranspo
    * @param {{ options: string[], movetime: number }} settings
    */
   async function run(fen, settings) {
-    if (terminated) throw new Error('Stockfish was terminated');
-    if (!engine) engine = start();
+    if (terminated) {
+      throw new Error('Stockfish was terminated');
+    }
+    if (!engine) {
+      engine = start();
+    }
     const current = engine;
     try {
       await current.ready;
@@ -305,7 +338,9 @@ export function createStockfishBot({ createTransport = () => createWorkerTranspo
     } catch (error) {
       const message = /** @type {Error} */ (error).message;
       // A finished game is a normal answer; anything else means this engine is unreliable.
-      if (!/no legal move|Unexpected Stockfish move/.test(message) && engine === current) discard();
+      if (!/no legal move|Unexpected Stockfish move/.test(message) && engine === current) {
+        discard();
+      }
       throw error;
     }
   }
@@ -326,8 +361,12 @@ export function createStockfishBot({ createTransport = () => createWorkerTranspo
      */
     getBotMove(fen, level = 'medium') {
       const settings = resolveLevel(level);
-      if ('error' in settings) return Promise.reject(new Error(settings.error));
-      if (terminated) return Promise.reject(new Error('Stockfish was terminated'));
+      if ('error' in settings) {
+        return Promise.reject(new Error(settings.error));
+      }
+      if (terminated) {
+        return Promise.reject(new Error('Stockfish was terminated'));
+      }
       if (typeof fen !== 'string' || fen.trim() === '') {
         return Promise.reject(new Error('A FEN string is required'));
       }

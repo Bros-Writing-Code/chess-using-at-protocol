@@ -28,11 +28,15 @@ function checkDepth(depth, min) {
 
 /** Number of leaf positions reachable in exactly `depth` moves. */
 function perft(state, depth) {
-  if (depth === 0) return 1;
+  if (depth === 0) {
+    return 1;
+  }
   let nodes = 0;
   for (const uci of legalMoves(state)) {
     const result = applyMove(state, uci);
-    if (!result.ok) throw new Error(`applyMove rejected generated move ${uci}: ${result.error}`);
+    if (!result.ok) {
+      throw new Error(`applyMove rejected generated move ${uci}: ${result.error}`);
+    }
     nodes += perft(result.value, depth - 1);
   }
   return nodes;

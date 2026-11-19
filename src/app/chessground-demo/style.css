@@ -10,7 +10,6 @@ main {
   height: min(90vw, 480px);
 }
 
-
 #mode-options,
 #color-options {
   display: flex;
@@ -19,8 +18,8 @@ main {
   justify-content: center;
 }
 
-#mode-options button[aria-pressed="true"],
-#color-options button[aria-pressed="true"] {
+#mode-options button[aria-pressed='true'],
+#color-options button[aria-pressed='true'] {
   font-weight: bold;
   outline: 2px solid currentColor;
 }

@@ -5,7 +5,7 @@
 - The chessground demo (`src/app/chessground-demo`) uses `src/engine` through the `game.js` adapter.
 - Engine code is plain JS: plain objects with separate functions, no piece classes (ADR 0003), and a 0x88 board (ADR 0002).
 - See `docs/ubiquitous_language.md`.
-- There are lint scripts. Use `npm test`, `npm run build`, `npm run dev`, `npm run lint`, and `npm run lint:fix`. No typecheck script yet.
+- There are lint scripts. Use `npm test`, `npm run build`, `npm run dev`, `npm run lint`, `npm run lint:fix`, `npm run format`, and `npm run format:check`. No typecheck script yet.
 - This is a course project with a short deadline, so prefer simple solutions over new tooling.
 - Never commit to `main`. Branch from an up-to-date `main`. Changes merge only through a PR with a merge commit, after approval from a different human.
 

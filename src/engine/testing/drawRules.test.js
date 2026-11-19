@@ -97,7 +97,14 @@ describe('threefold repetition', () => {
     // Kings step out and back: same placement, but castling rights are gone.
     const state = play(
       FENtoGameState('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1'),
-      'e1f1', 'e8f8', 'f1e1', 'f8e8', 'e1f1', 'e8f8', 'f1e1', 'f8e8',
+      'e1f1',
+      'e8f8',
+      'f1e1',
+      'f8e8',
+      'e1f1',
+      'e8f8',
+      'f1e1',
+      'f8e8',
     );
     // Position after the 4th move (no rights) occurs only twice by the 8th move.
     expect(state.status).toBe('active');
@@ -110,7 +117,17 @@ describe('threefold repetition', () => {
 
 describe('after a draw', () => {
   it('rejects further moves', () => {
-    const state = play(FENtoGameState(START), 'g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1', 'f6g8');
+    const state = play(
+      FENtoGameState(START),
+      'g1f3',
+      'g8f6',
+      'f3g1',
+      'f6g8',
+      'g1f3',
+      'g8f6',
+      'f3g1',
+      'f6g8',
+    );
     expect(applyMove(state, 'e2e4')).toMatchObject({ ok: false });
   });
 });

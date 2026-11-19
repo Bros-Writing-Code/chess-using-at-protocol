@@ -55,7 +55,10 @@ describe('Option 1 Lexicon documents', () => {
   });
 
   it('requires a matching $type discriminator', () => {
-    for (const [id, record] of [[GAME, game()], [REJECT, reject()]]) {
+    for (const [id, record] of [
+      [GAME, game()],
+      [REJECT, reject()],
+    ]) {
       delete record.$type;
       expect(() => lexicons.assertValidRecord(id, record)).toThrow();
       record.$type = 'app.knightsky.move';
@@ -84,18 +87,26 @@ describe('game record', () => {
   });
 
   it('accepts an acceptance with the opposite color and a versioned challenge', () => {
-    expect(() => validate(game({
-      opponent: ALICE,
-      color: 'black',
-      challenge: { ...GAME_REF },
-    }))).not.toThrow();
+    expect(() =>
+      validate(
+        game({
+          opponent: ALICE,
+          color: 'black',
+          challenge: { ...GAME_REF },
+        }),
+      ),
+    ).not.toThrow();
   });
 
   it('accepts a full-history move update', () => {
-    expect(() => validate(game({
-      pgn: '1. e4 e5 2. Nf3 *',
-      fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2',
-    }))).not.toThrow();
+    expect(() =>
+      validate(
+        game({
+          pgn: '1. e4 e5 2. Nf3 *',
+          fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2',
+        }),
+      ),
+    ).not.toThrow();
   });
 
   it('accepts resignation without requiring a new move', () => {

@@ -11,13 +11,7 @@
  */
 
 // Setting up and reading a game
-export {
-  START_FEN,
-  createGame,
-  getPiece,
-  toGrid,
-  replayMoves,
-} from './game.js';
+export { START_FEN, createGame, getPiece, toGrid, replayMoves } from './game.js';
 
 // Moves
 export { legalMovesFrom, legalMoves, isValidMove } from './game.js';

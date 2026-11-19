@@ -1,0 +1,8 @@
+# Minified third-party Stockfish build, not our code.
+src/bot/assets/
+# Written by npm.
+package-lock.json
+# Docs stay as written until we decide otherwise.
+*.md
+# Git worktrees of Delta agents inside a local checkout.
+.delta/

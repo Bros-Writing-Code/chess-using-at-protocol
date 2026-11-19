@@ -1,0 +1,4 @@
+# Check out every text file with LF endings, whatever each person's Git settings.
+# Git for Windows defaults to CRLF, which makes `npm run format:check` fail locally
+# while CI on Linux passes.
+* text=auto eol=lf

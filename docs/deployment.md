@@ -4,10 +4,10 @@ The app is currently deployed on GitHub Pages at <https://knightsky.app/>.
 
 ## How it works
 
-- For every PR the `CI` workflow (`.github/workflows/ci.yaml`) runs the tests and a build. PRs never deploy.
-- For every push to `main` (a merged PR), the same build is packed, and the `deploy` job publishes it.
+- For every PR the `CI` workflow (`.github/workflows/ci.yaml`) runs four separate checks: `lint`, `format`, `test` and `build`. PRs never deploy.
+- For every push to `main` (a merged PR), the same checks run again, the build is packed, and the `deploy` job publishes it only if all four pass.
 - `SITE_URL` is the only place the site's URL lives. It's a repo variable (Settings → Secrets and variables → Actions → Variables). `vite.config.js` turns its path into Vite's `base`. It's unset locally, so dev serves from `/`.
-- Renaming the repo moves the Pages URL with no redirect, so update `SITE_URL` (and this doc) to match.
+- The site uses a custom domain, so renaming the repo doesn't change its URL.
 
 To check a production build locally:
 

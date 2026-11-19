@@ -1,9 +1,9 @@
 import { createRequire } from 'node:module';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { createStockfishBot, resolveLevel, LEVELS, ELO_RANGE, SKILL_RANGE } from '../stockfish.js';
 import { SQUARES, toSquare } from '../../engine/0x88helper.js';
 import { moveGenerator } from '../../engine/moveGeneration.js';
 import { FENtoGameState, moveToUCI } from '../../engine/notation.js';
+import { createStockfishBot, resolveLevel, LEVELS, ELO_RANGE, SKILL_RANGE } from '../stockfish.js';
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -21,13 +21,25 @@ function fakeTransport({ autoHandshake = true, answer } = {}) {
     terminated: false,
     send(command) {
       sent.push(command);
-      if (autoHandshake && command === 'uci') queueMicrotask(() => emit('uciok'));
-      if (autoHandshake && command === 'isready') queueMicrotask(() => emit('readyok'));
-      if (command.startsWith('go') && answer) queueMicrotask(() => answer(command, emit));
+      if (autoHandshake && command === 'uci') {
+        queueMicrotask(() => emit('uciok'));
+      }
+      if (autoHandshake && command === 'isready') {
+        queueMicrotask(() => emit('readyok'));
+      }
+      if (command.startsWith('go') && answer) {
+        queueMicrotask(() => answer(command, emit));
+      }
     },
-    listen(callback) { onLine = callback; },
-    onError(callback) { this.crash = callback; },
-    terminate() { this.terminated = true; },
+    listen(callback) {
+      onLine = callback;
+    },
+    onError(callback) {
+      this.crash = callback;
+    },
+    terminate() {
+      this.terminated = true;
+    },
   };
 }
 
@@ -49,11 +61,16 @@ describe('Stockfish adapter (fake engine)', () => {
 
     expect(io.sent.filter((c) => c === 'uci')).toHaveLength(1);
     expect(io.sent).toEqual([
-      'uci', 'isready',
-      'setoption name UCI_LimitStrength value false', `setoption name Skill Level value ${LEVELS.easy.skill}`,
-      `position fen ${START}`, `go movetime ${LEVELS.easy.movetime}`,
-      'setoption name UCI_LimitStrength value false', `setoption name Skill Level value ${LEVELS.hard.skill}`,
-      `position fen ${START}`, `go movetime ${LEVELS.hard.movetime}`,
+      'uci',
+      'isready',
+      'setoption name UCI_LimitStrength value false',
+      `setoption name Skill Level value ${LEVELS.easy.skill}`,
+      `position fen ${START}`,
+      `go movetime ${LEVELS.easy.movetime}`,
+      'setoption name UCI_LimitStrength value false',
+      `setoption name Skill Level value ${LEVELS.hard.skill}`,
+      `position fen ${START}`,
+      `go movetime ${LEVELS.hard.movetime}`,
     ]);
   });
 
@@ -62,10 +79,16 @@ describe('Stockfish adapter (fake engine)', () => {
     const bot = botWith(io);
     await bot.getBotMove(START, { elo: 1800 });
     await bot.getBotMove(START, { skill: 12, movetime: 400 });
-    expect(io.sent).toEqual(expect.arrayContaining([
-      'setoption name UCI_LimitStrength value true', 'setoption name UCI_Elo value 1800', 'go movetime 1000',
-      'setoption name UCI_LimitStrength value false', 'setoption name Skill Level value 12', 'go movetime 400',
-    ]));
+    expect(io.sent).toEqual(
+      expect.arrayContaining([
+        'setoption name UCI_LimitStrength value true',
+        'setoption name UCI_Elo value 1800',
+        'go movetime 1000',
+        'setoption name UCI_LimitStrength value false',
+        'setoption name Skill Level value 12',
+        'go movetime 400',
+      ]),
+    );
   });
 
   it.each([
@@ -89,7 +112,10 @@ describe('Stockfish adapter (fake engine)', () => {
 
   it('ignores "info" lines and returns promotions with their piece letter', async () => {
     const io = fakeTransport({
-      answer: (_, emit) => { emit('info depth 5 score cp 900'); emit('bestmove a7a8q'); },
+      answer: (_, emit) => {
+        emit('info depth 5 score cp 900');
+        emit('bestmove a7a8q');
+      },
     });
     await expect(botWith(io).getBotMove('8/P6k/8/8/8/8/8/K7 w - - 0 1')).resolves.toBe('a7a8q');
   });
@@ -136,7 +162,9 @@ describe('Stockfish adapter (fake engine)', () => {
     const originalSend = io.send.bind(io);
     io.send = (command) => {
       originalSend(command);
-      if (command === 'stop') queueMicrotask(() => io.emit('bestmove g8f6'));
+      if (command === 'stop') {
+        queueMicrotask(() => io.emit('bestmove g8f6'));
+      }
     };
     const move = botWith(io).getBotMove(START, 'easy');
     await vi.advanceTimersByTimeAsync(LEVELS.easy.movetime + 3000);
@@ -188,7 +216,8 @@ describe('Stockfish adapter (fake engine)', () => {
 
   it('rejects the current search if the Worker crashes mid-search, then restarts', async () => {
     const crashing = fakeTransport({
-      answer: () => queueMicrotask(() => crashing.crash(new Error('Stockfish worker error: out of memory'))),
+      answer: () =>
+        queueMicrotask(() => crashing.crash(new Error('Stockfish worker error: out of memory'))),
     });
     const working = fakeTransport({ answer: (_, emit) => emit('bestmove g8f6') });
     const bot = botWith(crashing, working);
@@ -200,7 +229,12 @@ describe('Stockfish adapter (fake engine)', () => {
   it('keeps the same Stockfish after a normal "game over" answer', async () => {
     let created = 0;
     const io = fakeTransport({ answer: (_, emit) => emit('bestmove (none)') });
-    const bot = createStockfishBot({ createTransport: () => { created += 1; return io; } });
+    const bot = createStockfishBot({
+      createTransport: () => {
+        created += 1;
+        return io;
+      },
+    });
     await expect(bot.getBotMove(START)).rejects.toThrow(/no legal move/);
     await expect(bot.getBotMove(START)).rejects.toThrow(/no legal move/);
     expect(created).toBe(1);
@@ -225,7 +259,9 @@ function nodeTransport() {
   const engine = init('lite-single', (line) => onLine(line));
   return {
     send: (command) => engine.processCommand(command),
-    listen: (callback) => { onLine = callback; },
+    listen: (callback) => {
+      onLine = callback;
+    },
     terminate: () => engine.terminate(),
   };
 }
@@ -236,7 +272,9 @@ function legalMoves(fen) {
   const moves = [];
   for (const index of SQUARES) {
     const piece = state.board[index];
-    if (!piece || piece.color !== state.currentTurn) continue;
+    if (!piece || piece.color !== state.currentTurn) {
+      continue;
+    }
     const from = toSquare(index);
     for (const to of moveGenerator(state, from)) {
       const uci = moveToUCI({ from, to });
@@ -250,10 +288,14 @@ function legalMoves(fen) {
 describe('Stockfish adapter (real engine)', () => {
   const bot = createStockfishBot({ createTransport: nodeTransport });
 
-  it.each(['easy', 'medium', 'hard', 'max'])('returns a legal move at %s level', async (level) => {
-    const move = await bot.getBotMove(START, level);
-    expect(legalMoves(START)).toContain(move);
-  }, 15_000);
+  it.each(['easy', 'medium', 'hard', 'max'])(
+    'returns a legal move at %s level',
+    async (level) => {
+      const move = await bot.getBotMove(START, level);
+      expect(legalMoves(START)).toContain(move);
+    },
+    15_000,
+  );
 
   it('accepts the full Elo range', async () => {
     for (const elo of [ELO_RANGE.min, ELO_RANGE.max]) {

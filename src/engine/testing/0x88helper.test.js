@@ -1,8 +1,26 @@
 import { describe, it, expect } from 'vitest';
 import {
-  sqIndex, sqName, onBoard, pieceAt, toIndex, rowOf, colOf, fromSquare, toSquare,
-  isSquareName, SQUARES, emptyBoard, cloneBoard, withPiece, findSquares, findKing,
-  printBoard, NORTH, SOUTH, EAST, WEST,
+  sqIndex,
+  sqName,
+  onBoard,
+  pieceAt,
+  toIndex,
+  rowOf,
+  colOf,
+  fromSquare,
+  toSquare,
+  isSquareName,
+  SQUARES,
+  emptyBoard,
+  cloneBoard,
+  withPiece,
+  findSquares,
+  findKing,
+  printBoard,
+  NORTH,
+  SOUTH,
+  EAST,
+  WEST,
 } from '../0x88helper.js';
 
 const W = (type) => ({ type, color: 'w' });
@@ -19,8 +37,10 @@ describe('index conversions', () => {
   });
 
   it('round-trips all 64 square names', () => {
-    for (const f of 'abcdefgh') for (const r of '12345678') {
-      expect(sqName(sqIndex(f + r))).toBe(f + r);
+    for (const f of 'abcdefgh') {
+      for (const r of '12345678') {
+        expect(sqName(sqIndex(f + r))).toBe(f + r);
+      }
     }
   });
 
@@ -37,7 +57,7 @@ describe('index conversions', () => {
     expect(isSquareName('i1')).toBe(false);
     expect(isSquareName('e9')).toBe(false);
     expect(() => sqIndex('z9')).toThrow();
-    expect(() => sqName(8)).toThrow();   // padding
+    expect(() => sqName(8)).toThrow(); // padding
     expect(() => sqName(-1)).toThrow();
     expect(() => toSquare(200)).toThrow();
   });
@@ -47,7 +67,11 @@ describe('onBoard and directions', () => {
   it('exactly 64 of 128 cells are real squares', () => {
     expect(SQUARES).toHaveLength(64);
     let count = 0;
-    for (let i = 0; i < 128; i++) if (onBoard(i)) count++;
+    for (let i = 0; i < 128; i++) {
+      if (onBoard(i)) {
+        count++;
+      }
+    }
     expect(count).toBe(64);
   });
 
@@ -103,7 +127,10 @@ describe('board contents', () => {
     b = withPiece(b, sqIndex('g1'), W('n'));
     b = withPiece(b, sqIndex('e1'), W('k'));
     b = withPiece(b, sqIndex('e8'), B('k'));
-    expect(findSquares(b, (p) => p.type === 'n' && p.color === 'w').map(sqName)).toEqual(['b1', 'g1']);
+    expect(findSquares(b, (p) => p.type === 'n' && p.color === 'w').map(sqName)).toEqual([
+      'b1',
+      'g1',
+    ]);
     expect(sqName(findKing(b, 'w'))).toBe('e1');
     expect(sqName(findKing(b, 'b'))).toBe('e8');
     expect(findKing(emptyBoard(), 'w')).toBe(-1);
