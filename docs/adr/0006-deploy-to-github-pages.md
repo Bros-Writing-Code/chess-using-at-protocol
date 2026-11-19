@@ -11,7 +11,7 @@ There is no game server, so the app is only static files. We need free hosting n
 
 ## Decision
 
-- Host on GitHub Pages, published by the `deploy` job in `ci.yaml`. It runs only on pushes to `main`, after `test` passes.
+- Host on GitHub Pages, published by the `deploy` job in `ci.yaml`. It runs only on pushes to `main`, after `lint`, `format`, `test` and `build` pass.
 - The `SITE_URL` repo variable is the only place the URL lives. The build config and the login metadata can use it.
 
 ## Consequences
