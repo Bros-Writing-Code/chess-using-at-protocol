@@ -2,6 +2,5 @@
 src/bot/assets/
 # Written by npm.
 package-lock.json
-# Prettier pads every Markdown table column to its widest cell, so editing one
-# cell rewrites the whole table. Docs stay as written until we decide otherwise.
+# Docs stay as written until we decide otherwise.
 *.md
