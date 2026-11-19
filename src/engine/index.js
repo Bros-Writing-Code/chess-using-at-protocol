@@ -32,3 +32,5 @@ export { GameStatetoFEN, moveToUCI, UCItoMove } from './notation.js';
 
 // Debugging only: printBoard(state.board) prints an ASCII board
 export { printBoard } from './0x88helper.js';
+
+const unused = 1;
