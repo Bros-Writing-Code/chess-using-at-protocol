@@ -1,6 +1,6 @@
 # Deployment
 
-The app is currently deployed on GitHub Pages at <https://bros-writing-code.github.io/knightsky/>.
+The app is currently deployed on GitHub Pages at <https://knightsky.app/>.
 
 ## How it works
 
@@ -12,7 +12,7 @@ The app is currently deployed on GitHub Pages at <https://bros-writing-code.gith
 To check a production build locally:
 
 ```sh
-export SITE_URL=https://bros-writing-code.github.io/knightsky/
+export SITE_URL=https://knightsky.app/
 npm run build
 npx vite preview
 ```
