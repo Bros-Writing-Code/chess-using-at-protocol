@@ -8,8 +8,8 @@
   },
   "scripts": {
     "test": "vitest run",
-    "dev": "vite src/app/chessground-demo",
-    "build": "vite build src/app/chessground-demo",
+    "dev": "vite",
+    "build": "vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
