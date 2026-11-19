@@ -32,8 +32,7 @@ const DEFAULT_PROMOTION = 'q';
  * @param {string} [startFen] - Starting position. Defaults to the normal start.
  */
 export function createGame(startFen) {
-  let state = createEngineGame(startFen)
-
+  let state = createEngineGame(startFen);
 
   /** @returns {ColorName} */
   function turn() {
@@ -69,12 +68,13 @@ export function createGame(startFen) {
         const from = uci.slice(0, 2);
         const to = uci.slice(2, 4);
         const tos = targets.get(from) ?? [];
-        if (!tos.includes(to)) tos.push(to);
+        if (!tos.includes(to)) {
+          tos.push(to);
+        }
         targets.set(from, tos);
       }
       return targets;
     },
-
 
     /**
      * Plays a move. A promotion with no piece letter becomes a queen.
@@ -88,10 +88,10 @@ export function createGame(startFen) {
       const toPlay = engineLegalMoves(state).includes(withQueen) ? withQueen : uci;
       const result = applyMove(state, toPlay);
       if (!result.ok) {
-        return {ok: false, error: result.error};
+        return { ok: false, error: result.error };
       }
       state = result.value;
-      return {ok: true, value: GameStatetoFEN(state)};
+      return { ok: true, value: GameStatetoFEN(state) };
     },
 
     status,

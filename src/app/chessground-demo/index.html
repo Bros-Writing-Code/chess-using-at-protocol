@@ -6,13 +6,18 @@
     <title>Chessground demo</title>
   </head>
   <body>
-    
     <main>
       <div id="mode-options" role="group" aria-label="Game mode">
         <button type="button" data-mode="pvp" aria-pressed="true">Player vs Player</button>
-        <button type="button" data-mode="bot" data-level="easy" aria-pressed="false">Bot Easy</button>
-        <button type="button" data-mode="bot" data-level="medium" aria-pressed="false">Bot Medium</button>
-        <button type="button" data-mode="bot" data-level="hard" aria-pressed="false">Bot Hard</button>
+        <button type="button" data-mode="bot" data-level="easy" aria-pressed="false">
+          Bot Easy
+        </button>
+        <button type="button" data-mode="bot" data-level="medium" aria-pressed="false">
+          Bot Medium
+        </button>
+        <button type="button" data-mode="bot" data-level="hard" aria-pressed="false">
+          Bot Hard
+        </button>
         <button type="button" data-mode="bot" data-level="max" aria-pressed="false">Bot Max</button>
       </div>
       <div id="color-options" role="group" aria-label="Your colour">
@@ -23,8 +28,10 @@
       <p>Black <span id="black-clock"></span></p>
       <div id="board"></div>
       <p>White <span id="white-clock"></span></p>
-      <p><button id="new-game" type="button">Start New Game</button>
-      <button id="resign" type="button">Resign</button></p>
+      <p>
+        <button id="new-game" type="button">Start New Game</button>
+        <button id="resign" type="button">Resign</button>
+      </p>
     </main>
     <script type="module" src="./main.js"></script>
   </body>
