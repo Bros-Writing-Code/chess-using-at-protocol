@@ -2,7 +2,7 @@
 
 Author: James Keys
 
-- [Lexicon options](lexicon-options.md)
+- [Lexicon](lexicon.md)
 - OAuth (TODO)
 
 ## Lexicon
