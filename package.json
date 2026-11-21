@@ -1,6 +1,6 @@
 {
   "name": "chess-using-at-protocol",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "index.js",
   "directories": {
@@ -42,6 +42,7 @@
     "vitest": "^2.1.8"
   },
   "dependencies": {
+    "@atproto/oauth-client-browser": "^0.5.17",
     "@lichess-org/chessground": "^10.5.0",
     "chess.js": "^1.4.0"
   }

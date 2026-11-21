@@ -7,6 +7,17 @@
   </head>
   <body>
     <main>
+      <form id="login-form">
+        <label
+          >Handle <input id="handle" name="handle" placeholder="alice.bsky.social" required
+        /></label>
+        <button type="submit">Sign in with Bluesky</button>
+      </form>
+      <p id="account" hidden>
+        Signed in as <span id="account-did"></span>
+        <button id="logout" type="button">Sign out</button>
+      </p>
+      <p id="login-error" role="alert"></p>
       <div id="mode-options" role="group" aria-label="Game mode">
         <button type="button" data-mode="pvp" aria-pressed="true">Player vs Player</button>
         <button type="button" data-mode="bot" data-level="easy" aria-pressed="false">
@@ -33,6 +44,7 @@
         <button id="resign" type="button">Resign</button>
       </p>
     </main>
+    <footer><small>Knightsky v1.1.0</small></footer>
     <script type="module" src="./main.js"></script>
   </body>
 </html>

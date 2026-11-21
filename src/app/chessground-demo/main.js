@@ -1,9 +1,11 @@
 // @ts-check
+/// <reference types="vite/client" />
 import { Chessground } from '@lichess-org/chessground';
 import '@lichess-org/chessground/assets/chessground.base.css';
 import '@lichess-org/chessground/assets/chessground.brown.css';
 import '@lichess-org/chessground/assets/chessground.cburnett.css';
 import './style.css';
+import { getProfile, initAuth, signIn, signOut } from '../../atproto/auth.js';
 import { createStockfishBot } from '../../bot/stockfish.js';
 import { COLORS, createClock } from './clock.js';
 import { createGame } from './game.js';
@@ -29,14 +31,20 @@ const DRAW_TEXTS = {
   'insufficient-material': 'Draw by insufficient material.',
 };
 
-const statusElement = document.getElementById('status');
-const boardElement = document.getElementById('board');
-const newGameButton = document.getElementById('new-game');
-const resignGameButton = document.getElementById('resign');
-/** @type {Record<ColorName, HTMLElement | null>} */
+/**
+ * @param {string} id
+ * @returns {HTMLElement} The element, which index.html always provides.
+ */
+const byId = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
+
+const statusElement = byId('status');
+const boardElement = byId('board');
+const newGameButton = byId('new-game');
+const resignGameButton = byId('resign');
+/** @type {Record<ColorName, HTMLElement>} */
 const clockElements = {
-  white: document.getElementById('white-clock'),
-  black: document.getElementById('black-clock'),
+  white: byId('white-clock'),
+  black: byId('black-clock'),
 };
 
 const clock = createClock({
@@ -108,7 +116,7 @@ function statusText() {
     return `${COLOR_LABELS[OPPONENTS[resignedColor]]} wins by resignation.`;
   }
   const { status, winner, drawReason, inCheck } = game.status();
-  if (status === 'checkmate') {
+  if (status === 'checkmate' && winner) {
     return `Checkmate. ${COLOR_LABELS[winner]} wins.`;
   }
   if (drawReason) {
@@ -150,7 +158,7 @@ async function playBotMove() {
     if (thisGame !== gameId || gameOver) {
       return;
     } // new game or game ended while thinking
-    play(uci.slice(0, 2), uci.slice(2, 4));
+    play(/** @type {Key} */ (uci.slice(0, 2)), /** @type {Key} */ (uci.slice(2, 4)));
   } catch (error) {
     console.error(error);
     statusElement.textContent = 'The bot failed to move. Start a new game.';
@@ -222,18 +230,18 @@ function resignGame() {
   }
 }
 
-const modeOptions = document.getElementById('mode-options');
+const modeOptions = byId('mode-options');
 
 modeOptions?.addEventListener('click', (event) => {
-  const button = event.target.closest('button');
+  const button = /** @type {HTMLElement} */ (event.target).closest('button');
   if (!button) {
     return;
   }
 
-  mode = button.dataset.mode;
+  mode = /** @type {typeof mode} */ (button.dataset.mode);
 
   if (button.dataset.level) {
-    botLvl = button.dataset.level;
+    botLvl = /** @type {typeof botLvl} */ (button.dataset.level);
   }
 
   for (const other of modeOptions.querySelectorAll('button')) {
@@ -242,15 +250,15 @@ modeOptions?.addEventListener('click', (event) => {
   startNewGame();
 });
 
-const HumanOptions = document.getElementById('color-options');
+const HumanOptions = byId('color-options');
 
 HumanOptions?.addEventListener('click', (event) => {
-  const button = event.target.closest('button');
+  const button = /** @type {HTMLElement} */ (event.target).closest('button');
   if (!button) {
     return;
   }
 
-  humanColor = button.dataset.color;
+  humanColor = /** @type {typeof humanColor} */ (button.dataset.color);
 
   for (const other of HumanOptions.querySelectorAll('button')) {
     other.setAttribute('aria-pressed', String(other === button));
@@ -269,3 +277,61 @@ setInterval(() => {
 
 newGameButton.addEventListener('click', startNewGame);
 startNewGame();
+
+const loginForm = /** @type {HTMLFormElement} */ (byId('login-form'));
+const accountElement = byId('account');
+const loginError = byId('login-error');
+/** @type {Awaited<ReturnType<typeof initAuth>>} */
+let session;
+
+/** @param {unknown} error */
+function showLoginError(error) {
+  loginError.textContent = `Sign in failed: ${error instanceof Error ? error.message : error}`;
+}
+
+async function renderAccount() {
+  loginForm.hidden = Boolean(session);
+  accountElement.hidden = !session;
+  if (!session) {
+    return;
+  }
+  const did = session.sub;
+  byId('account-did').textContent = did; // shown until the profile arrives, or if the lookup fails
+  try {
+    const { displayName, handle } = await getProfile(did);
+    if (session?.sub === did) {
+      byId('account-did').textContent = displayName ? `${displayName} (@${handle})` : `@${handle}`;
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+loginForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  loginError.textContent = '';
+  try {
+    await signIn(String(new FormData(loginForm).get('handle')).trim());
+  } catch (error) {
+    showLoginError(error);
+  }
+});
+
+byId('logout').addEventListener('click', async () => {
+  try {
+    if (session) {
+      await signOut(session);
+    }
+    session = undefined;
+  } catch (error) {
+    showLoginError(error); // stay signed in in the UI, since the session may still be valid
+  }
+  renderAccount();
+});
+
+initAuth()
+  .then((restored) => {
+    session = restored;
+  })
+  .catch(showLoginError)
+  .finally(renderAccount);
