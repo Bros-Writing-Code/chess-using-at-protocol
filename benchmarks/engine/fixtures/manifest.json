@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "seed": 2100050,
+  "algorithm": "xorshift32",
+  "generator": "chess.js 1.4.0",
+  "games": 200,
+  "maxPlies": [40, 60, 80, 100, 120],
+  "selection": "sorted UCI, floor(random * count)",
+  "sha256": "39e46953cb0948121190a46a60bfd11d967c7791b5054ec925e6e87b02bed358"
+}

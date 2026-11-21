@@ -7,6 +7,10 @@
     "doc": "docs"
   },
   "scripts": {
+    "bench": "node benchmarks/engine/scripts/run.js",
+    "bench:fixtures": "node benchmarks/engine/scripts/generate-fixtures.js",
+    "bench:compare": "node benchmarks/engine/scripts/compare.js",
+    "bench:charts": "node benchmarks/engine/scripts/charts.js",
     "test": "vitest run",
     "dev": "vite",
     "build": "vite build",
@@ -32,6 +36,7 @@
     "@atproto/lexicon": "^0.6.2",
     "@eslint/js": "^10.0.1",
     "@vitest/eslint-plugin": "^1.6.28",
+    "chess.js": "1.4.0",
     "eslint": "^10.15.0",
     "eslint-plugin-import-x": "^4.18.1",
     "eslint-plugin-sonarjs": "^4.2.2",
@@ -39,10 +44,9 @@
     "prettier": "3.9.10",
     "stockfish": "19.0.1",
     "vite": "^5.4.21",
-    "vitest": "^2.1.8"
+    "vitest": "2.1.9"
   },
   "dependencies": {
-    "@lichess-org/chessground": "^10.5.0",
-    "chess.js": "^1.4.0"
+    "@lichess-org/chessground": "^10.5.0"
   }
 }

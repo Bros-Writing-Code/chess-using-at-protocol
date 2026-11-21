@@ -1,0 +1,42 @@
+[
+  {
+    "runId": "2026-11-21T00-38-57-261Z-9a82cae",
+    "metadata": {
+      "commit": "9a82cae0a41bb32aafb19a85002629fb994011ef",
+      "date": "2026-11-21T00:38:57.261Z",
+      "label": "engine-v0",
+      "engineDirty": false,
+      "engineTree": "487e73dee2bd2f43160c6bb34b52d67d0ce32073",
+      "engineSourceHash": "12b4d5269aa07253459ac9778af8c9f8487f8a283935560f9047a6cb4656f7d3",
+      "harnessCommit": "9a82cae0a41bb32aafb19a85002629fb994011ef",
+      "harnessDirty": true,
+      "method": "engine-bench-v2",
+      "methodHash": "4b05db1f55f98c7372c40fa42492553185e796e9e81f417d202b5d4da558a56d",
+      "fixtureHash": "39e46953cb0948121190a46a60bfd11d967c7791b5054ec925e6e87b02bed358",
+      "node": "v24.22.3",
+      "machine": {
+        "id": "565a5a8556d2dc4a",
+        "cpu": "Apple M4",
+        "arch": "arm64",
+        "os": "darwin 24.6.0",
+        "logicalCpus": 10,
+        "memoryBytes": 17179869184
+      },
+      "chessjsVersion": "1.4.0",
+      "vitestVersion": "2.1.9",
+      "tinybenchVersion": "2.9.0",
+      "settings": {
+        "rounds": 5,
+        "quick": false,
+        "timeMs": 300,
+        "minimumIterations": 5,
+        "warmupMs": 100,
+        "warmupIterations": 2,
+        "tasks": "all"
+      },
+      "capabilities": {
+        "pgn": "unsupported: replayPGN is not exported"
+      }
+    }
+  }
+]

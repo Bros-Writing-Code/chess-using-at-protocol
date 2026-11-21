@@ -91,7 +91,7 @@ export default defineConfig([
   },
   {
     // Tests and tooling run in Node, not the browser.
-    files: ['**/*.test.js', '**/testing/**/*.js', '*.config.js'],
+    files: ['**/*.test.js', '**/testing/**/*.js', '*.config.js', 'benchmarks/**/*.js'],
     languageOptions: { globals: { ...globals.node } },
   },
 ]);
