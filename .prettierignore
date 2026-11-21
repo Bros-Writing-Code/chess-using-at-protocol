@@ -6,3 +6,7 @@ package-lock.json
 *.md
 # Git worktrees of Delta agents inside a local checkout.
 .delta/
+# Generated inputs are content-hashed; archived measurement outputs are immutable.
+benchmarks/engine/fixtures/games.json
+benchmarks/engine/results/
+benchmarks/engine/charts/

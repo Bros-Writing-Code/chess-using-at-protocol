@@ -28,3 +28,6 @@ Thumbs.db
 
 # Local configuration
 *.local
+
+# Benchmark raw samples are temporary; only summaries are archived.
+benchmarks/engine/raw/
